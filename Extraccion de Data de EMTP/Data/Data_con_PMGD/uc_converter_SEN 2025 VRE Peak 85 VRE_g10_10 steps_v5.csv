@@ -1,0 +1,20 @@
+Name1,LibType,Status1,StatusFinal
+STAT_POLPAICO,STATCOM,1,1
+STAT_CNAVIA,STATCOM,1,1
+STAT_PAZUCAR,STATCOM,1,1
+BESS_SAN_ANDRES,AC-DC converter with control,1,1
+BESS_PV_Salvador,AC-DC converter with control,1,1
+BESS_La_Cabana,AC-DC converter with control,1,1
+BESS_EL_MANZANO,AC-DC converter with control,1,1
+BESS_La_Cabana_Amp,AC-DC converter with control,1,1
+BESS_Maria_Elena,AC-DC converter with control,1,1
+BESS_DON_HUMBERTO,AC-DC converter with control,1,1
+BESS_Andes_Solar_IIA,AC-DC converter with control,1,1
+BESS_Tamaya,AC-DC converter with control,1,1
+BESS_Central_DDA,AC-DC converter with control,1,1
+BESS_CAPRICORNIO,AC-DC converter with control,1,1
+BESS_Quillagua,AC-DC converter with control,1,1
+BESS_Sol_del_Desierto,AC-DC converter with control,1,1
+BESS_Andes_III_Etapa_I,AC-DC converter with control,1,1
+BESS_GABRIELA,AC-DC converter with control,1,1
+BESS_VICTOR_JARA,AC-DC converter with control,1,1

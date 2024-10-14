@@ -1,0 +1,205 @@
+/******************************************************************************
+ *                               template_script.dwj                          *
+ *             Script with examples for use emtp_cen.dwj in EMTP              *
+ *                                                                            *
+ *                       Developed by Matias Aguero-Soto                      *
+ *                         (agueromatias97@gmail.com)                         *
+ *                                                                            *
+ *                         Last modified: 08/11/2023                          *
+ ******************************************************************************/
+
+//* #####################       PATHS       #######################
+parseScriptFile("emtp_cen.dwj");
+
+parseScriptFile(
+  "C:\\Users\\matias.aguero\\OneDrive - Coordinador El\u00e9ctrico Nacional\\" +
+    "EMTP Script\\MAS\\emtp_cen.dwj"
+);
+
+var pathData =
+"C:\Users\fabian.medina\Downloads\OneDrive_1_21-06-2024"
+ // "C:\\Users\\matias.aguero\\Downloads\\Ejemplo EMTP Script\\Datos";
+
+var pathDataLF =
+  "C:\\Users\\matias.aguero\\Downloads\\Ejemplo EMTP Script\\LoadFlow";
+
+var nameLines =
+  //"C:\\Users\\matias.aguero\\Downloads\\Ejemplo EMTP Script\\Nombres\\nameLines.csv";
+  "C:\\Users\fabian.medina\\Downloads\\OneDrive_1_21-06-2024\\Data\\nameLines.csv"
+
+var nameBuses =
+  "C:\\Users\\matias.aguero\\Downloads\\Ejemplo EMTP Script\\Nombres\\nameBuses.csv";
+
+//* ################## DATA EXPORTATIONS  #########################
+
+//* Saca todas las lineas de la primera capa
+var data_lines = gridAllData(3);
+outputFile(data_lines, "data_lines_", pathData);
+
+//* Saca el nombre de las barras de la primera capa
+var data_buses = gridAllData(6);
+outputFile(data_buses, "data_buses_", pathData);
+
+//* Saca todas las cargas con LF de la primera capa
+var data_loadLF = gridAllData(2);
+outputFile(data_loadLF, "data_loadLF_", pathData);
+
+//* Saca todos los datos de SG
+var data_allSG = gridAllData("SG");
+outputFile(data_allSG, "data_allSG_", pathData);
+
+//* Saca todos los datos de LF asociados a SG
+var data_lfToSG = gridAllData("lfToSG");
+outputFile(data_lfToSG, "data_lfToSG_", pathData);
+
+//* Saca todos los datos de TF asociados a SG, no usar
+var data_tfToSG = gridAllData("tfToSG");
+outputFile(data_tfToSG, "data_tfToSG_", pathData);
+
+//* Saca todos los datos de los PV parks
+var data_PV = gridAllData("PV");
+outputFile(data_PV, "data_PV_", pathData);
+
+//* Saca todos los datos de los Wind parks
+var data_WP = gridAllData("WP");
+outputFile(data_WP, "data_WP_", pathData);
+
+//* Saca todos los datos de los TF
+var data_TF = gridAllData("TF");
+outputFile(data_TF, "data_TF_", pathData);
+
+//* Saca todos los datos de LF que hayan
+var data_LF = gridAllData(10);
+outputFile(data_LF, "data_LF_", pathData);
+
+//* ######################### UNIT COMMITMENT ##############################
+
+//* Saca el predespacho de SG,PV,WP, y Reactive compensator
+ucData(pathData);
+
+//* Saca el predespacho de los SG
+ucData(pathData, "SG");
+
+//* Saca el predespacho de los PV
+ucData(pathData, "PV");
+
+//* Saca el predespacho de los WP
+ucData(pathData, "WP");
+
+//* ###############       DATA FROM LOAD-FLOW   ###########################
+
+//* Ejemplo de datos del flujo en líneas
+fileWithParametersContent = returnFileContent(nameLines);
+var oFileData = new interpreteFile(fileWithParametersContent, 10);
+var transfers = dataOf(oFileData.names, 3, ["Transfers"]);
+outputFile(transfers, "data_transfers2_", pathData);
+
+//* Ejemplo de Barras
+fileWithParametersContent = returnFileContent(nameBuses);
+var oFileData = new interpreteFile(fileWithParametersContent, 10);
+var voltages = dataOf(oFileData.names, 6, ["Voltage"]);
+outputFile(voltages, "data_voltage2_", pathData);
+
+//* #############       LOAD OPERATION POINT     ###########################
+
+//* Cargar punto de operación de PV
+loadOperationPoint(dataPV, 0);
+
+// * Cargar punto de operación de LoadLF
+loadOperationPoint(dataLoadLF, 2);
+
+//* Cargar punto de operación de WP
+loadOperationPoint(dataLF, 5);
+
+//* Cargar punto de operación de LF
+loadOperationPoint(dataLF, 10);
+
+// ##############################################################################
+
+//* Sacar los modelos de un circuito a una librería
+var path_lib = //path of the library
+  "C:\\Users\\matias.aguero\\OneDrive - Coordinador El\u00e9ctrico Nacional\\MAS library EMTP\\";
+
+var title_lib = "Grid Booster database";
+var name_lib = "gb_database_models";
+
+models_to_lib(title_lib, name_lib, path_lib);
+
+// #############################################################################
+// correr flujo y simulaciones dinámicas
+var load_flow = run_load_flow();
+
+var dict_settings = {
+  tmax: 2,
+  Dt: 50,
+  Dtu: "us",
+  StartFromLoadFlow: "1"
+};
+
+var emt_sim = run_time_domain(dict_settings);
+
+// #############################################################################
+// PV Curve
+var base_path =
+  "C:\\Users\\matias.aguero\\Coordinador El\u00e9ctrico Nacional\\" +
+  "DLAB - Migrator - General\\2024.06.04 1641 LT Modelo Pi\\2024.06.05 NPA-Pol\\PV Curve test";
+
+var pathData = base_path + "\\" + "Datos";
+
+var load_name = ["Load1"];
+var load_attributes = ["P_loadLF"];
+var P_values = arange(100, 500, 50);
+var bus_names = ["BUS1"];
+
+var export_string = "P,V\n";
+
+var all_LoadLF = cct.devices(
+  4,
+  -1,
+  6,
+  "LibType",
+  "PQ load Yg with load-flow (LF)"
+);
+
+for (var i = 0; i < P_values.length; i++) {
+  var P_value = P_values[i];
+  load_P = [[P_value]];
+  changeData(load_name, load_attributes, load_P, 2); //check if the change is made in 3 phases
+  var cct = currentCircuit;
+  settings_lf = { cct: cct };
+  var load_flow = run_load_flow(settings_lf);
+  var voltages = dataOf(bus_names, 6, ["Voltage"]);
+  var voltage = Number(voltages.split("\n")[1].split(",")[1]).toFixed(6);
+  export_string += String(P_value * 3) + "," + String(voltage) + "\n";
+}
+outputFile(export_string, "pv_curve_", pathData);
+// #############################################################################
+
+// * test for read data
+// fileWithParametersContent = returnFileContent(
+//   "data_lfToSG_E1 01 2022 DA NPA-POL 1750 HNG 8.38_MAS.txt"
+// );
+// var oFileData = new interpreteFile(fileWithParametersContent);
+
+// changeData(oFileData.names_LF, oFileData.parameters_LF, oFileData.values_LF, 5);
+
+// * test for changeData
+
+// names_loadLF = ["ATR_PALMON_N5", "ATR_PALMON_N2"];
+// params_loadLF = ["Np", "Nominal_Voltage", "P_loadLF", "Q_loadLF"];
+// values_loadLF = [
+//   [2, 40, 1, 0.4],
+//   [0, 240, 20, 3],
+// ];
+// changeData("all", ["Nq", "Np"], ["1", "2"], 8);
+// changeData(names_loadLF, params_loadLF, values_loadLF, 8);
+
+// names_LF = ["LF_CPABE_U1", "LF_NTO_U1"];
+// params_LF = ["BusType", "Voltage", "P", "Qset", "Qmax", "Qmin"];
+// values_LF = [
+//   ["PV", 13.8, 220, 480, 73.8, -80.7],
+//   ["PQ", 13.8, 220, 480, 73.8, -80.7],
+// ];
+// changeData(names_LF, params_LF, values_LF, 5);
+
+// changeData(oFileData.names_LF, oFileData.parameters_LF, oFileData.values_LF, 5);

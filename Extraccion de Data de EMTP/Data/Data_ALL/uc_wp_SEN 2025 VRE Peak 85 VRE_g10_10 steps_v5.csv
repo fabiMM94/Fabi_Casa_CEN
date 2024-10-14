@@ -1,0 +1,44 @@
+Name1,Name2,Type_Park,Status1,Status2,StatusFinal
+PE_Aurora,-,WECC WP,1,-,1
+PE_SanGabriel,-,WECC WP,1,-,1
+PE_MallecoNorte,-,WECC WP,1,-,1
+PE_MallecoSur,-,WECC WP,1,-,1
+PE_Los_Olmos,-,WECC WP,1,-,1
+PE_Tolpan_Sur,-,WECC WP,1,-,1
+PE_Lomas_de_Duqueco,-,WECC WP,1,-,1
+PE_El_Arrayan,-,WECC WP,1,-,1
+PE_Pta_Palmeras,-,WECC WP,1,-,1
+PE_Talinay_O_P,-,WECC WP,1,-,1
+PE_Monte_Redondo,-,WECC WP,1,-,1
+PE_CANELA_II,-,WECC WP,1,-,1
+PE_LOS_CURUROS,-,WECC WP,1,-,1
+PE_PUNTA_SIERRA,-,WECC WP,1,-,1
+PE_Cerro_Pampa_Tigre,-,WECC WP,1,-,1
+PE_Sierra_Gorda,-,WECC WP,1,-,1
+PE_Tchamma,-,WECC WP,1,-,1
+PE_Calama34,-,WECC WP,1,-,1
+PE_Cabo_Leones_I,-,WECC WP,1,-,1
+PE_Valle_de_los_Vientos,-,WECC WP,1,-,1
+PE_Taltal_Parinas,-,WECC WP,1,-,1
+PE_Llanos_del_Viento,-,WECC WP,1,-,1
+PE_La_Estrella,-,WECC WP,1,-,1
+PE_San_Juan_I_II,-,WECC WP,1,-,1
+PE_Ca_Man_Lce,-,WECC WP,1,-,1
+PE_Ckani_new,-,WECC WP,1,-,1
+PE_SUR_1,-,WECC WP,1,-,1
+PE_SUR_2,-,WECC WP,1,-,1
+PE_SUR_3,-,WECC WP,1,-,1
+PE_SUR_4,-,WECC WP,1,-,1
+PE_Sarco220,-,WECC WP,1,-,1
+PE_Renaico_I,-,WECC WP,1,-,1
+PE_Horizonte_Etapa1_OG,-,WECC Wind park,1,-,1
+PE_Horizonte_Etapa2_OG,-,WECC Wind park,1,-,1
+PE_Lomas_de_TalTal_OG,-,WECC Wind park,1,-,1
+PE_Antofagasta_OG,-,WECC Wind park,1,-,1
+PE_San_Matias_Etapa1_OG,-,WECC Wind park,1,-,1
+PE_Caman_Etapa1_OG,-,WECC Wind park,1,-,1
+PE_Taltal,PE_Taltal,FC Wind park,0,1,0
+PE_Cabo_Leones_II,-,WECC WP,0,-,0
+PE_Sarco220_old,-,WECC WP,0,-,0
+PE_San_Pedro_II,-,WECC WP,0,-,0
+PE_Ckani,-,WECC WP,0,-,0

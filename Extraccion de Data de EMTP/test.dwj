@@ -1,0 +1,112 @@
+parseScriptFile("emtp_cen.dwj");
+
+var pathData =
+"C:\\Users\\fabian.medina\\OneDrive - Coordinador Eléctrico Nacional\\Escritorio\\CEN_Fabian\\Codigos\\DATA TEST GRID FORMING\\Data";
+//"C:\\Users\\fabian.medina\\Downloads\\OneDrive_1_21-06-2024\\Data";
+
+// var pathData =
+//   "C:\\Users\\mati1\\OneDrive - Coordinador El\u00e9ctrico Nacional\\" +
+//   "Folder to Sharing\\Ejemplo punto de operacion\\Datos\\";
+
+var cct = currentCircuit;
+
+
+
+//* Saca todos los datos de SG
+var data_allSG = gridAllData("SG");
+outputFile(data_allSG, "data_allSG_", pathData);
+
+//* Saca todos los datos de LF asociados a SG
+var data_lfToSG = gridAllData("lfToSG");
+outputFile(data_lfToSG, "data_lfToSG_", pathData);
+
+//* ######################### UNIT COMMITMENT ##############################
+
+// Saca el predespacho de SG,PV,WP, y Reactive compensator
+ucData(pathData);
+
+//* Saca el predespacho de los SG
+ucData(pathData, "SG");
+
+//* Saca el predespacho de los PV
+ucData(pathData, "PV");
+
+//* Saca el predespacho de los WP
+ucData(pathData, "WP");
+
+// var dict_settings_lf = {
+//   cct: cct
+// };
+
+
+// var load_flow = run_load_flow(dict_settings_lf);
+
+//var nameLines =
+  //"C:\\Users\\fabian.medina\\Downloads\\OneDrive_1_21-06-2024\\Data\\nameLines.csv"
+/*
+//* Ejemplo de datos del flujo en líneas
+fileWithParametersContent = returnFileContent(nameLines);
+var oFileData = new interpreteFile(fileWithParametersContent, 10);
+var transfers = dataOf(oFileData.names, 3, ["Transfers"]);
+outputFile(transfers, "data_transfers2_", pathData);
+
+*/
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//* Saca todas las cargas con LF de la primera capa
+/*
+var data_loadLF = gridAllData(2);
+outputFile(data_loadLF, "data_loadLF_", pathData);
+
+
+//* Saca todos los datos de LF asociados a SG
+var data_lfToSG = gridAllData("lfToSG");
+outputFile(data_lfToSG, "data_lfToSG_", pathData);
+
+
+
+
+
+
+
+//* Saca todos los datos de los PV parks
+var data_PV = gridAllData("PV");
+outputFile(data_PV, "data_PV_", pathData);
+
+//* Saca todos los datos de los Wind parks
+var data_WP = gridAllData("WP");
+outputFile(data_WP, "data_WP_", pathData);
+
+//* Saca todos los datos de SG
+var data_allSG = gridAllData("SG");
+
+outputFile(data_allSG, "data_allSG_", pathData);
+*/
+//* Saca todas las lineas de la primera capa
+//var data_lines = gridAllData(3);
+//outputFile(data_lines, "data_lines_", pathData);
+//* Ejemplo de datos del flujo en líneas
+/*
+fileWithParametersContent = returnFileContent(nameLines);
+var oFileData = new interpreteFile(fileWithParametersContent, 10);
+var transfers = dataOf(oFileData.names, 3, ["Transfers"]);
+outputFile(transfers, "data_transfers2_", pathData);
+*/

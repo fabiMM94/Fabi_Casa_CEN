@@ -1,0 +1,64 @@
+Name1,Name2,Type_Park,Status1,Status2,StatusFinal
+PFV_Capricornio,PFV_Capricornio_new,WECC PV park,1,1,1
+PFV_Quilapilun,PFV_Quilapilun,PV park,1,1,1
+PFV_Dona_Carmen,PFV_Dona_Carmen,PV park,1,1,1
+PFV_EL_PELÍCANO,PFV_EL_PELICANO,WECC PV park,1,1,1
+PFV_LA_HUELLA,PFV_LA_HUELLA,WECC PV park,1,1,1
+PFV_EL_ROMERO,PFV_EL_ROMERO,WECC PV park,1,1,1
+PFV_VALLE_ESCONDIDO,PFV_VALLE_ESCONDIDO,PV park,1,1,1
+PFV_SAN_ANDRES,PFV_SAN_ANDRES,WECC PV park,1,1,1
+PFV_LLANO_DE_LLAMPOS,PFV_LLANO_DE_LLAMPOS,WECC PV park,1,1,1
+PFV_Pampa_Solar_Norte,PFV_Pampa_Solar_Norte,PV park,1,1,1
+PFV_GUANCHOI,PFV_GUANCHOI,WECC PV park,1,1,1
+PFV_D_ALMAGRO_SUR,PFV_DIEGO_DE_ALMAGRO_SUR,WECC PV park,1,1,1
+PFV_CAMPOS_DEL_SOL,PFV_CAMPOS_DEL_SOL,WECC PV park,1,1,1
+PFV_LUZ_DEL_NORTE,PFV_LUZ_DEL_NORTE,WECC PV park,1,1,1
+PFV_CARRERA_PINTO,PFV_CARRERA_PINTO,PV park,1,1,1
+PFV_DAlmagro_Equiv,PFV_DAlmagro_Equiv,PV park,1,1,1
+PFV_Conejo,PFV_Conejo,PV park,1,1,1
+PFV_LALACKAMA_I_II,PFV_LALACKAMA_I_II,PV park,1,1,1
+PFV_MALGARIDA_I_II,PFV_MALGARIDA_I_II,WECC PV park,1,1,1
+PFV_ALMEYDA,PFV_ALMEYDA,WECC PV park,1,1,1
+PFV_Pampa_PTigre,PV_PAMPA_TIGRE,WECC PV park,1,1,1
+PFV_Domeyko,PFV_Domeyko,PV park,1,1,1
+PFV_Andes_Solar_SD_SA_SN,PFV_Andes_Solar,WECC PV park,1,1,1
+PFV_UribeSolar,PFV_UribeSolar,WECC PV park,1,1,1
+PFV_Bolero,PFV_Bolero,WECC PV park,1,1,1
+PFV_VALLE_DEL_SOL,PFV_VALLE_DEL_SOL,PV park,1,1,1
+PFV_Cerro_Dominador,PFV_Cerro_Dominador,WECC PV park,1,1,1
+PFV_TamayaSolar,PFV_TamayaSolar,WECC PV park,1,1,1
+PFV_Finis_Terrae_I,PFV_Finis_Terrae_I,WECC PV park,1,1,1
+PFV_Finis_Terrae_II,PFV_Finis_Terrae_II,WECC PV park,1,1,1
+PFV_Jama_I_II,PFV_Jama_I_II,PV park,1,1,1
+PFV_Usya_AzaBache,PFV_Usya_AzaBache,WECC PV park,1,1,1
+PFV_LCruz_Solar,PFV_LCruz_Solar,PV park,1,1,1
+PFV_Sol_del_Desierto_II,PFV_Sol_del_Desierto_II,WECC PV park,1,1,1
+PFV_Maria_Elena,PFV_Maria_Elena,PV park,1,1,1
+PFV_Granja_Solar,PFV_Granja_Solar,PV park,1,1,1
+PFV_Huatacondo,PFV_Huatacondo,PV park,1,1,1
+PFV_Atacama_Solar_II,PFV_Atacama_Solar_II,PV park,1,1,1
+PFV_Nuevo_Quillahua,PFV_Nuevo_Quillahua,PV park,1,1,1
+PFV_PALM_HUAYCA,PFV_PALM_HUAYCA,WECC PV park,1,1,1
+PFV_San_Pedro,PFV_San_Pedro,WECC PV park,1,1,1
+PFV_Andes_Solar_II,PFV_Andes_Solar_IIA,WECC PV park,1,1,1
+PFV_Coya,PFV_Coya,PV park,1,1,1
+PFV_Elena_Kimal,PFV_Elena_Kimal,PV park,1,1,1
+PFV_Las_Salinas,PFV_Las_Salinas,PV park,1,1,1
+PFV_Pedro_de_Valdivia,PFV_Pedro_de_Valdivia,PV park,1,1,1
+PFV_Lalackama_Parinas,PFV_Lalackama_Parinas,PV park,1,1,1
+PFV_Willka2,PFV_Willka2,PV park,1,1,1
+PFV_Nuevo_Futuro,PFV_Nuevo_Futuro,PV park,1,1,1
+PFV_Punta_del_Viento,PFV_Punta_del_Viento,PV park,1,1,1
+PFV_Libelula_Gen,PFV_Libelula_Gen,PV park,1,1,1
+PFV_Meseta_de_los_Andes,PFV_Meseta_de_los_Andes,PV park,1,1,1
+PFV_COCHRANE,PFV_COCHRANE,WECC PV park,1,1,1
+PFV_KAPATUIR,PFV_KAPATUIR,WECC PV park,1,1,1
+PFV_QUILLOTA,PFV_QUILLOTA,PV park,1,1,1
+PFV_LAMPA,PFV_LAMPA,PV park,1,1,1
+PFV_IEM_TEN,PFV_IEM_TEN,WECC PV park,1,1,1
+PFV_RIO_ESCONDIDO,PFV_RIO_ESCONDIDO,WECC PV park,0,1,0
+PFV_Sol_del_Lila,PFV_Sol_del_Lila,PV park,0,1,0
+PFV_STA_ISABEL,PFV_STA_ISABEL,PV park,0,1,0
+PFV_Sol_de_Varas,PFV_Sol_de_Varas,PV park,0,1,0
+PFV_IEM_TEN_old,PFV_iem_ten,WECC PV park,0,1,0
+PFV_NCHUQUI,PFV_NCHUQUI,WECC PV park,0,1,0

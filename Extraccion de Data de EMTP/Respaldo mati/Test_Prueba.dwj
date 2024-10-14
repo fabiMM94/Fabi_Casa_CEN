@@ -1,0 +1,127 @@
+
+//////////////////////////////////////////////////////////////////////
+///                    PREVIO                                   ///
+///////////////////////////////////////////////////////////////////
+
+parseScriptFile("emtp_cen.dwj");
+
+var pathData = //'C:\\Users\\benjamin.vega\\Documents\\GitHub\\GFM_SEN\\Extraccion de Data de EMTP'
+
+'C:\\Users\\fabian.medina\\OneDrive - Coordinador El\u00e9ctrico Nacional\\Escritorio\\CEN_Fabian\\Codigos\\DATA TEST GRID FORMING\\GFM_SEN\\Extraccion de Data de EMTP\\Data\\Data_NDespacho'
+//'C:\\Users\\fabian.medina\\OneDrive - Coordinador El\u00e9ctrico Nacional\\Escritorio\\CEN_Fabian\\Codigos\\DATA TEST GRID FORMING\\00. New Version Code\\Mati codigos\\Data_con_PMGD'
+//"C:\\Users\\fabian.medina\\OneDrive - Coordinador Eléctrico Nacional\\Escritorio\\CEN_Fabian\\Codigos\\DATA TEST GRID FORMING\Data";
+// var pathData =
+//   "C:\\Users\\mati1\\OneDrive - Coordinador El\u00e9ctrico Nacional\\" +
+//   "Folder to Sharing\\Ejemplo punto de operacion\\Datos\\";
+
+var cct = currentCircuit;
+
+//  ---------------------------------- SACANDO DATOS------------------------------------------------------------------------
+
+// //* Saca todos los datos de los PV parks
+var data_PV = gridAllData("PV");
+outputFile(data_PV, "data_PV_", pathData);
+
+// //* Saca todos los datos de los Wind parks
+var data_WP = gridAllData("WP");
+outputFile(data_WP, "data_WP_", pathData);
+
+// //* Saca todos los datos de SG
+var data_allSG = gridAllData("SG");
+outputFile(data_allSG, "data_allSG_", pathData);
+
+////var data_allSG2 = gridAllData("SG2");
+// //outputFile(data_allSG2, "data_allSG2_", pathData);
+
+// Saca todos los datos de LF asociados a SG
+var data_lfToSG = gridAllData("lfToSG");
+outputFile(data_lfToSG, "data_lfToSG_", pathData);
+
+//* Saca todos los datos de LF que hayan
+var data_LF = gridAllData(10);
+outputFile(data_LF, "data_LF_", pathData);
+
+
+//* ######################### UNIT COMMITMENT ##############################
+
+// Saca el predespacho de SG,PV,WP, y Reactive compensator
+ucData(pathData);
+
+// //* Saca el predespacho de los SG
+ucData(pathData, "SG");
+
+// //* Saca el predespacho de los PV
+ucData(pathData, "PV");
+
+// //* Saca el predespacho de los WP
+ucData(pathData, "WP");
+
+
+//-------------- Referencias--------------------------------------------------------------------------------------------------------
+
+
+
+
+//dataPV = "Referencias\\PV_ref_prorrata.csv"
+//dataWP ="Referencias\\WP_ref_prorrata.csv"
+// arma el punto de operación como input en JS y luego carga los nuevos puntos de operación en EMTP
+//loadOperationPoint(dataPV, 0);
+//loadOperationPoint(dataWP, 5);
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//* Cargar punto de operación de PV
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+//ruta_base= "C:\\Users\\fabian.medina\\OneDrive - Coordinador El\u00e9ctrico Nacional\\Escritorio\\CEN_Fabian\\Codigos\\DATA TEST GRID FORMING\\Data\\"
+//dataPV = ruta_base + "ejemplo-pv.csv"
+
+//loadOperationPoint(dataPV, 0);
+
