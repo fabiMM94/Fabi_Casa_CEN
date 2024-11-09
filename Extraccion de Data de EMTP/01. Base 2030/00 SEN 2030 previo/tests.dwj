@@ -1,0 +1,32 @@
+var base_path =
+  "C:\\Users\\matias.aguero\\OneDrive - Coordinador El\u00e9ctrico Nacional\\";
+var emtp_cen_path = "Github\\emtp_cen\\emtp_cen.dwj";
+var full_emtp_cen_path = base_path + emtp_cen_path;
+parseScriptFile(full_emtp_cen_path);
+
+prefix_data_path =
+  "C:\\Users\\matias.aguero\\Coordinador El\u00e9ctrico Nacional\\DLAB - Fortaleza de Red - Estudio 2024\\02. An\u00e1lisis de antecedentes\\Modelo EMTP SEN\\Red 2030 (con HVDC)\\";
+
+var pathData = prefix_data_path + "Iteracion 0\\Datos";
+// //* Saca todas las lineas de la primera capa
+// var data_lines = gridAllData(3);
+// outputFile(data_lines, "data_lines_", pathData);
+// //* Saca el nombre de las barras de la primera capa
+// var data_buses = gridAllData(6);
+// outputFile(data_buses, "data_buses_", pathData);
+
+// //* ###############       DATA FROM LOAD-FLOW   ###########################
+var lines_names = pathData + "\\lines_names.csv";
+var buses_names = pathData + "\\buses_names.csv";
+
+// //* Ejemplo de datos del flujo en líneas
+fileWithParametersContent = returnFileContent(lines_names);
+var oFileData = new interpreteFile(fileWithParametersContent, 10);
+var transfers = dataOf(oFileData.names, 3, ["Transfers"]);
+outputFile(transfers, "data_transfers2_", pathData);
+
+//* Ejemplo de Barras
+fileWithParametersContent = returnFileContent(buses_names);
+var oFileData = new interpreteFile(fileWithParametersContent, 10);
+var voltages = dataOf(oFileData.names, 6, ["Voltage"]);
+outputFile(voltages, "data_voltage2_", pathData);

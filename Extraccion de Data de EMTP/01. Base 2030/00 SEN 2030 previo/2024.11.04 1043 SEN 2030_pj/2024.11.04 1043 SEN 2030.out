@@ -1,0 +1,21 @@
+->Created output file: C:\Users\matias.aguero\Coordinador Eléctrico Nacional\DLAB - Fortaleza de Red - Estudio 2024\02. Análisis de antecedentes\Modelo EMTP SEN\Red 2030 (con HVDC)\Iteracion 0\2024.11.04 1043 SEN 2030\2024.11.04 1043 SEN 2030_pj\2024.11.04 1043 SEN 2030.out
+->Created output file: C:\Users\matias.aguero\Coordinador Eléctrico Nacional\DLAB - Fortaleza de Red - Estudio 2024\02. Análisis de antecedentes\Modelo EMTP SEN\Red 2030 (con HVDC)\Iteracion 0\2024.11.04 1043 SEN 2030\2024.11.04 1043 SEN 2030_pj\2024.11.04 1043 SEN 2030.html
+->START Reading input data
+Circuit Diagram: Circuit.Diagram=2024.11.04 1043 SEN 2030.ecf
+Circuit date: 6/11/2024 16:36:19
+->END Reading input data
+->EMTP version 4.4 started
+->Simulation date: 24/11/06
+->Simulation time: 16:39:09.755
+Input Netlist file, EMTP format: C:\Users\matias.aguero\Coordinador Eléctrico Nacional\DLAB - Fortaleza de Red - Estudio 2024\02. Análisis de antecedentes\Modelo EMTP SEN\Red 2030 (con HVDC)\Iteracion 0\2024.11.04 1043 SEN 2030\2024.11.04 1043 SEN 2030.net
+->Number of data lines: 431998
+->Start Load-Flow
+->Loaded previously calculated Load-Flow data<---
+->End Load-Flow
+
+->START simulation statistics
+
+->END simulation statistics
+EMTP terminated
+Date: 24/11/06
+Time: 16:39:27.192
