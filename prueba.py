@@ -7,12 +7,11 @@ import unicodedata
 import numpy as np
 import math as m
 import re
-from openpyxl import load_workbook
 
 
 
 # FUNCIONES IMPORTANTES
- # FUNCIONES IMPORTANTES
+
  #------------ Remueve acentos 
 def remove_accents(input_str):
     # Normalizar el string a su forma combinada
@@ -20,27 +19,7 @@ def remove_accents(input_str):
     # Filtrar y mantener solo los caracteres que no son diacríticos
     return ''.join([c for c in nfkd_form if not unicodedata.combining(c)])
 # ----------- Crea data de zonas 
-def Zone_data(Hoja,type):
-    #excel = "diccionario_Benja/Diccionario_EMTP_DIgSILENT_BVega_v4.xlsx"
-    excel = "diccionario_Benja/Zonas_DIgSILENT.xlsx"
-    data= pd.read_excel(excel,sheet_name=Hoja)
-    if type == "PV":
-        columnas_deseadas = ['Name1', 'Name2','Zona DIgSILENT','Nombre DIgSILENT']  # Reemplaza con los nombres de las columnas que deseas
-    elif type == "WP":
-         columnas_deseadas = ['Name1','Zona DIgSILENT','Nombre DIgSILENT']     
-    elif type == "SG":
-        columnas_deseadas = ['Name1', 'Name2','Name3','Zona DIgSILENT','Nombre DIgSILENT']    
-    elif type == "PMGD":
-        columnas_deseadas = ['Name1', 'Name2','Zona DIgSILENT','Nombre DIgSILENT']  
-    elif type == "CCSS":
-        columnas_deseadas = ['Name1', 'Name2','Zona DIgSILENT','Nombre DIgSILENT']    
-    elif type =="Cargas":
-        columnas_deseadas = ['Carga EMTP','Zona DIgSILENT']   
-        
-    # Filtra el DataFrame para que contenga solo las columnas deseadas
-    dataframe_filtrado = data[columnas_deseadas]
-    #return dataframe_filtrado.dropna()   
-    return dataframe_filtrado   
+
 
 def Transformación_MW_MVAR(cadena):
     #cadena_sin_mas = cadena[1:]
@@ -78,7 +57,6 @@ def analizar_numero(n):
     else:
         return None  # Si no cae en ninguna categoría
 
-
 # Ruta de la carpeta en la que deseas buscar los archivos HTML
 ruta_carpeta = '.'
 
@@ -88,11 +66,12 @@ archivos_html = [archivo for archivo in os.listdir(ruta_carpeta) if archivo.ends
 # Aqui coloco el nombre del archivo como string
 #archivo = "2024.11.08 1047 SEN 2030 Norte_BVG Norte_lf.html"
 #archivo = "SEN 2025 VRE Peak 85 VRE_g1_10 steps_lf.html"
-#excel = "Datos_nom_v1.xlsx"
-#V_nominal = pd.read_excel(excel)
+excel = "Datos_nom_v1.xlsx"
+V_nominal = pd.read_excel(excel)
 c=0
 for archivo in archivos_html:
-    # leo Excel y HTML
+     # leo Excel y HTML
+ 
     df= pd.read_html(archivo)
     df=pd.DataFrame(df[0]) # Lo hago legible
     #obtengo el nombre las columnas y las reescribo
@@ -108,8 +87,7 @@ for archivo in archivos_html:
     lista_columnas = fila_cero.to_list()
     lista_columnas= lista_columnas[:5] 
     df = df[lista_columnas[:5]]
-
-    #--------------Data Generacion-------------------
+   #--------------Data Generacion-------------------
     valores_filtrar = ['PVbus', 'Slack', 'PQbus']
     df_GEN = df[df['Type'].isin(valores_filtrar)]
     # Data frame vacio de columnas definidas
@@ -122,26 +100,126 @@ for archivo in archivos_html:
     df_GEN_F['Vnom [kV]'] = df_GEN_F["V [kV]"].apply(analizar_numero) #Arreglo
 
 
+
     #aqui la colummna device la expando para obtener 3 columnas de tal forma que coincida con lo anterior
     Nombres = df_GEN['Device'].str.split('/', expand=True)
-    Nombres.columns = ['Name1', 'Name2', 'NameLF',"Name4"]
-    # Esto entrega la tabla de resultados de todas las centrales del HTML
-    df_GEN_Final = pd.concat([Nombres,df_GEN_F], axis=1)
-    df_GEN_Final = df_GEN_Final.drop(columns=['Name4']) #no tiene nada util
+    if  len(Nombres.columns) > 3 :
+        Nombres.columns = ['Name1', 'Name2', 'NameLF',"Name4"]
+        # Esto entrega la tabla de resultados de todas las centrales del HTML
+        df_GEN_Final = pd.concat([Nombres,df_GEN_F], axis=1)
+        df_GEN_Final = df_GEN_Final.drop(columns=['Name4']) #no tiene nada util
+    else : 
+        Nombres.columns = ['Name1', 'Name2', 'NameLF']
+        df_GEN_Final = pd.concat([Nombres,df_GEN_F], axis=1)
 
+
+
+
+
+    # PARCHES
+    df_GEN_Final.loc[df_GEN_Final['Name1'].str.contains('CCSS|CS', case=False, na=False), 'Vnom [kV]'] = 15
+    df_GEN_Final.loc[df_GEN_Final['Name1'].isin(['LF_CS_U15']), 'Vnom [kV]'] = 13.8
+    df_GEN_Final.loc[df_GEN_Final['Name1'].isin(['Central_IEM_CTM3'	]), 'Vnom [kV]'] = 20
+    df_GEN_Final.loc[df_GEN_Final['Name1'].isin(['Central_EL_Paso'	]), 'Vnom [kV]'] = 10.5
+
+    ##------------------------Sobre escribo datos nominales------------------------------------
+    
+    N = len(df_GEN_Final)
+    for fila in range(N):
+        Name1= df_GEN_Final.at[fila,"Name1"]
+        Name2= df_GEN_Final.at[fila,"Name2"]
+        NameLF= df_GEN_Final.at[fila,"NameLF"]
+        result = V_nominal[(V_nominal['Name1'] == Name1) &
+                                 (V_nominal['Name2'] == Name2) & 
+                                 (V_nominal['NameLF'] == NameLF)]
+        if len(result)== 1:
+            df_GEN_Final.at[fila,"Vnom [kV]"] =result["Tensión Nominal [kV]"]
+        else: 
+            continue 
     # Escribo V pu 
     df_GEN_Final['Tensión [pu]'] = df_GEN_Final["V [kV]"]/df_GEN_Final['Vnom [kV]']
-    pd.set_option('display.max_rows', 140)
  
     Tabla_LF_GEN=df_GEN_Final
     Tabla_LF_GEN
+   
+
+
+
+
+
+
+
+#-------------------------------- CARGAS -------------------------------------------------------
+    df= pd.read_html(archivo)
+    columnas = ["V [kV]","P [MW]","Q [MVAr]"]
+    #columnas = ['Tensión en Bornes [kV]','Potencia Activa [MW]', 'Potencia Reactiva [Mvar]']
+    columnas2 = ['Name1','Name2', 'EMTP Load Flow Component']
+    df2 = pd.DataFrame(columns=columnas2)
+    
+    # Crear el DataFrame vacío con las columnas definidas
+    df_FINAL = pd.DataFrame(columns=columnas)
+    df=pd.DataFrame(df[0])
+    # Se procede a transformar el dataframe de html para que este legible 
+
+    #obtengo el nombre las columnas y las reescribo
+    fila_cero = df.iloc[0] 
+    df.columns =fila_cero.to_list()
+    #borro la fila 0 que tenia los nombres de las columnas
+    df = df.iloc[1:]
+    # reseteo los indices desde 0 y luego borro la primera columna indice
+    df=pd.DataFrame(df.reset_index())
+    lista_columnas = fila_cero.to_list()
+    #  obtengo solo las 5 primeras importantes
+    lista_columnas= lista_columnas[:5] 
+    df2 = df[lista_columnas[:5]]
+    # Crear una lista que solo contenga las centrales y no las cargas 
+
+
+    valores_filtrar2 = ['PQload']
+    df_filtrado2 = df2[df2['Type'].isin(valores_filtrar2)]
+ 
+    #valores_filtrar = ['PVbus', 'Slack', 'PQbus']
+    #df_filtrado = df2[df2['Type'].isin(valores_filtrar)]
+
+    df_FINAL["P [MW]"]=df_filtrado2['P (W)'].apply(Transformación_MW_MVAR)
+    df_FINAL["Q [MVAr]"]=df_filtrado2['Q (VAR)'].apply(Transformación_MW_MVAR)
+    df_FINAL["V [kV]"] = df_filtrado2["Vabc (kVRMSLL,deg) phasor"].apply(separar_numeros)
+    df_FINAL['Vnom [kV]'] = df_FINAL["V [kV]"].apply(analizar_numero)
+    df_FINAL['V [pu]'] = df_FINAL["V [kV]"]/df_FINAL['Vnom [kV]']
+  
+
+    nuevo_df2 =df_filtrado2["Device"] 
+    # Esto entrega la tabla de resultados de todas las centrales del HTML
+    
+    df_Resultados2 = pd.concat([nuevo_df2, df_FINAL], axis=1)
+
+
+
+    #---------------------------- saco los acentos 
+    #df_Resultados['Name1'] = df_Resultados['Name1'].apply(lambda x: unidecode(x))
+    #df_Resultados['Name2'] = df_Resultados['Name2'].apply(lambda x: unidecode(x))
+
+
+    ##------------------------------------------------------------------------------------------
+   
+    # que me entregue las columnas de 3 en 3
+    df_Resultados2 = df_Resultados2.iloc[::3]
+    #reseteo los indices 
+    df_Resultados2 = df_Resultados2.reset_index(drop=True)
+    #borro el nombre "Load_a del string de su"
+    df_Resultados2['Device'] = df_Resultados2['Device'].str.replace('/Load_a', '', regex=False)
+    
+
+    Tabla_LF_cargas= pd.DataFrame(df_Resultados2)
+
+
+
+    ## Escribo Excel--------------------------------------------------------------- 
     c=c+1
-
-    ## Escribo Excel 
-
     archivo= archivo.replace('.html', '')
 
     Nombre_del_archivo="Datos"+str(c)+"_"+archivo
     with pd.ExcelWriter(Nombre_del_archivo+'.xlsx') as writer:
-        Tabla_LF_GEN.to_excel(writer, sheet_name='Data'+str(c),index=False)    
+        Tabla_LF_GEN.to_excel(writer, sheet_name='DataGEN'+str(c),index=False) 
+        Tabla_LF_cargas.to_excel(writer, sheet_name='LFcargas'+str(c),index=False)   
     

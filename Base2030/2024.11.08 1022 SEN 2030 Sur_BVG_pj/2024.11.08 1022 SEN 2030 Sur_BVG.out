@@ -6,13 +6,13 @@ Circuit date: 14/11/2024 11:30:06
 ->END Reading input data
 ->EMTP version 4.4 started
 ->Simulation date: 24/11/14
-->Simulation time: 12:39:10.382
+->Simulation time: 15:44:51.036
 Input Netlist file, EMTP format: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2030\2024.11.08 1022 SEN 2030 Sur_BVG.net
 ->Number of data lines: 73001
 ->Start Load-Flow
 Current subcircuit chain:
-ATR_LASTARR_220/                                                                                                                                                                                                                                                                                                                                                                                                          
-!!Error, device: ATR_LASTARR_220/Load_a
+PE_Aurora/PQinit/                                                                                                                                                                                                                                                                                                                                                                                                         
+!!Error, device: PE_Aurora/PQinit/LF
 The device is causing convergence problems in the load-flow solution.
 !!Error, the Load-Flow solution method did not converge. 
 The problematic iterative loop number is loop 1 and the maximum number of iterations was 50
