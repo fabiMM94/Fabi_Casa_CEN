@@ -1,0 +1,24 @@
+->Created output file: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2030\2024.11.14 1100 SEN 2030 Sur paso 1_pj\2024.11.14 1100 SEN 2030 Sur paso 1.out
+->Created output file: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2030\2024.11.14 1100 SEN 2030 Sur paso 1_pj\2024.11.14 1100 SEN 2030 Sur paso 1.html
+->START Reading input data
+Circuit Diagram: Circuit.Diagram=2024.11.14 1100 SEN 2030 Sur paso 1.ecf
+Circuit date: 14/11/2024 11:51:50
+->END Reading input data
+->EMTP version 4.4 started
+->Simulation date: 24/11/14
+->Simulation time: 12:53:39.402
+Input Netlist file, EMTP format: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2030\2024.11.14 1100 SEN 2030 Sur paso 1.net
+->Number of data lines: 73001
+->Start Load-Flow
+->Loaded previously calculated Load-Flow data<---
+!!Error, the Load-Flow solution method did not converge. 
+The problematic iterative loop number is loop 2 and the maximum number of iterations was 50
+Possible solutions: consult the documentation of the Load-Flow option.
+->End Load-Flow
+
+->START simulation statistics
+
+->END simulation statistics
+EMTP terminated
+Date: 24/11/14
+Time: 12:53:42.918

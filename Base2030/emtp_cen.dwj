@@ -1,0 +1,4703 @@
+/******************************************************************************
+ *                               emtp_cen.dwj                                 *
+ *                    Script with functions for use in EMTP                   *
+ *                                                                            *
+ *                       Developed by Matias Aguero-Soto                      *
+ *                         (agueromatias97@gmail.com)                         *
+ *                                                                            *
+ *                         Last modified: 03/16/2024                          *
+ ******************************************************************************/
+
+parseScriptFile("make_file_name.dwj");
+parseScriptFile("program_.dwj");
+parseScriptFile("run_emtp.dwj");
+parseScriptFile("check_my_filename.dwj");
+parseScriptFile("find_data_in_object.dwj");
+parseScriptFile("runLoadFLow.dwj"); //* to use the load flow
+var cct = currentCircuit;
+
+function gridAllData(deviceType) {
+  /**
+   ** Obtain all the data of the selected device type or signal (only for buses).
+   * @param {string} deviceType
+   * - 0 => PV: PV parks.
+   * - 100 => PV2: PV parks, old format.
+   * - 1 => SG: Synchronous Generators.
+   * - 2 => loadLF: loads with a lf, only for the firs layer.
+   * - 22 => loadLF2: loads with a lf, only for the firs layer, old format.
+   * - 3 => lines: lines transmissions with CP model.
+   * - 4 => TF: transformers.
+   * - 5 => WP: Wind Parks.
+   * - 55 => WP2: Wind Parks, old format.
+   * - 6 => buses: names of the buses (only on top level).
+   * - 7 => lfToSG: lf devices associated to every SG.
+   * - 8 => tfToSG: tf devices associated to every SG.
+   * - 9 => allToSG: lf and tf devices associated to every SG.
+   * - 10 => LF: all the LF devices in top level.
+   */
+  if (deviceType == "PV" || deviceType == 0) {
+    parseScriptFile("WECC_PVPark_m.dwj");
+    var all_WECC_PV = cct.devices(4, -1, 5, "LibType", "WECC PV park");
+    var data_PV =
+      "Name_PV,LibType,N_PV_arrays,N_PV_inServ,S_spv,Unit,P_ctrlMode,Active_ref,Unit,Q_ctrlMode,Reactive_ref,Unit,s_nom,p_mw,q_mw,p_pu,q_pu,Frequency,Unit,Collector_grid_nominal_voltage,Unit,Tx_grid_nominal_voltage(POI),Unit,Include_ZigZag_transformer_option,R_ZigZag,Unit,L_ZigZag,Unit,Inverter_nominal_voltage,Unit,DC_voltage,Unit,Q_filt,Unit,R_Choke,L_Choke,Inc_collector,R_collector,Unit,L_collector,Unit,C_collector,Unit\n";
+    for (var i = 0; i < all_WECC_PV.length; i++) {
+      var devWECC = all_WECC_PV[i];
+      var oDevWECC_PV = new oDevice_WECC_PV(devWECC);
+      var ngen_in_service_WECC_PV = oDevWECC_PV.Parameters.Ngen_in_service;
+      var s_gen_WECC_PV = oDevWECC_PV.Parameters.Sgen;
+      var plant_rated_power_WECC_PV =
+        Number(ngen_in_service_WECC_PV) * Number(s_gen_WECC_PV);
+      var p_WECC_PV = oDevWECC_PV.Parameters.Pref_poi;
+      var active_power_mw_poi_WECC_PV =
+        Number(plant_rated_power_WECC_PV) * Number(p_WECC_PV);
+      active_power_mw_poi_WECC_PV = active_power_mw_poi_WECC_PV.toFixed(8);
+      var active_power_pu_poi_WECC_PV =
+        active_power_mw_poi_WECC_PV / plant_rated_power_WECC_PV;
+      active_power_pu_poi_WECC_PV = active_power_pu_poi_WECC_PV.toFixed(8);
+      var reactive_power_pu_poi_WECC_PV = Number(
+        oDevWECC_PV.Parameters.Qpoi_pu
+      );
+      reactive_power_pu_poi_WECC_PV = reactive_power_pu_poi_WECC_PV.toFixed(8);
+      var reactive_power_mw_poi_WECC_PV =
+        Number(plant_rated_power_WECC_PV) *
+        Number(reactive_power_pu_poi_WECC_PV);
+      reactive_power_mw_poi_WECC_PV = reactive_power_mw_poi_WECC_PV.toFixed(8);
+      data_PV +=
+        devWECC.getAttribute("Name") +
+        "," +
+        devWECC.getAttribute("LibType") +
+        "," +
+        oDevWECC_PV.Parameters.Ngen +
+        "," +
+        oDevWECC_PV.Parameters.Ngen_in_service +
+        "," +
+        oDevWECC_PV.Parameters.Sgen +
+        "," +
+        oDevWECC_PV.Parameters.Sgen_unit +
+        "," +
+        oDevWECC_PV.Parameters.PC_select +
+        "," +
+        oDevWECC_PV.Parameters.Pref_poi +
+        ",pu," +
+        oDevWECC_PV.Parameters.QC_select +
+        "," +
+        oDevWECC_PV.Parameters.Qpoi_pu +
+        ",pu," +
+        String(plant_rated_power_WECC_PV) +
+        "," +
+        String(active_power_mw_poi_WECC_PV) +
+        "," +
+        String(reactive_power_mw_poi_WECC_PV) +
+        "," +
+        String(active_power_pu_poi_WECC_PV) +
+        "," +
+        String(reactive_power_pu_poi_WECC_PV) +
+        "," +
+        oDevWECC_PV.Parameters.Freq +
+        ",Hz," +
+        oDevWECC_PV.Parameters.Vgrid_kVRMSLL +
+        ",kVRMSLL," +
+        oDevWECC_PV.Parameters.Vpoi_kVRMSLL +
+        ",kVRMSLL," +
+        oDevWECC_PV.Parameters.includeZigZagTransfo +
+        "," +
+        oDevWECC_PV.Parameters.ZigZag_R0_ohm +
+        ",Ohm," +
+        oDevWECC_PV.Parameters.ZigZag_L0_H +
+        ",H," +
+        oDevWECC_PV.Parameters.Vgen_kVRMSLL +
+        ",kVRMSLL," +
+        oDevWECC_PV.Parameters.Vdc_kV +
+        ",kVRMSLL," +
+        oDevWECC_PV.Parameters.Qfilt +
+        "," +
+        oDevWECC_PV.Parameters.Qfilt_unit +
+        "," +
+        oDevWECC_PV.Parameters.Rchoke +
+        "," +
+        oDevWECC_PV.Parameters.Lchoke +
+        "," +
+        oDevWECC_PV.Parameters.includeCollGrid +
+        "," +
+        oDevWECC_PV.Parameters.R_Coll_Grid_Ohm +
+        ",Ohm," +
+        oDevWECC_PV.Parameters.L_Coll_Grid_H +
+        ",H," +
+        oDevWECC_PV.Parameters.C_Coll_Grid_F +
+        ",F\n";
+    }
+    // Repeat the same process for standard PV devices
+    parseScriptFile("PVPark_m.dwj");
+    var all_std_PV = cct.devices(4, -1, 5, "LibType", "PV park");
+    for (var j = 0; j < all_std_PV.length; j++) {
+      var devStdPV = all_std_PV[j];
+      var oDevStd_PV = new oDevice_PV(devStdPV);
+      var ngen_in_service_std_PV = oDevStd_PV.Parameters.Ngen_in_service;
+      var s_gen_std_PV = oDevStd_PV.Parameters.Sgen;
+      var plant_rated_power_std_PV =
+        Number(ngen_in_service_std_PV) * Number(s_gen_std_PV);
+      var p_std_PV = oDevStd_PV.Parameters.Pref_poi;
+      var active_power_mw_poi_std_PV =
+        Number(plant_rated_power_std_PV) * Number(p_std_PV);
+      active_power_mw_poi_std_PV = active_power_mw_poi_std_PV.toFixed(8);
+      var active_power_pu_poi_std_PV =
+        active_power_mw_poi_std_PV / plant_rated_power_std_PV;
+      active_power_pu_poi_std_PV = active_power_pu_poi_std_PV.toFixed(8);
+      var reactive_power_pu_poi_std_PV = Number(oDevStd_PV.Parameters.Qpoi_pu);
+      reactive_power_pu_poi_std_PV = reactive_power_pu_poi_std_PV.toFixed(8);
+      var reactive_power_mw_poi_std_PV =
+        Number(plant_rated_power_std_PV) * Number(reactive_power_pu_poi_std_PV);
+      reactive_power_mw_poi_std_PV = reactive_power_mw_poi_std_PV.toFixed(8);
+
+      data_PV +=
+        devStdPV.getAttribute("Name") +
+        "," +
+        devStdPV.getAttribute("LibType") +
+        "," +
+        oDevStd_PV.Parameters.Ngen +
+        "," +
+        ngen_in_service_std_PV +
+        "," +
+        oDevStd_PV.Parameters.Sgen +
+        "," +
+        oDevStd_PV.Parameters.Sgen_unit +
+        "," +
+        oDevStd_PV.Parameters.PC_select +
+        "," +
+        oDevStd_PV.Parameters.Pref_poi +
+        ",pu," +
+        oDevStd_PV.Parameters.QC_select +
+        "," +
+        oDevStd_PV.Parameters.Qpoi_pu +
+        ",pu," +
+        String(plant_rated_power_std_PV) +
+        "," +
+        String(active_power_mw_poi_std_PV) +
+        "," +
+        String(reactive_power_mw_poi_std_PV) +
+        "," +
+        String(active_power_pu_poi_std_PV) +
+        "," +
+        String(reactive_power_pu_poi_std_PV) +
+        "," +
+        oDevStd_PV.Parameters.Freq +
+        ",Hz," +
+        oDevStd_PV.Parameters.Vgrid_kVRMSLL +
+        ",kVRMSLL," +
+        oDevStd_PV.Parameters.Vpoi_kVRMSLL +
+        ",kVRMSLL," +
+        oDevStd_PV.Parameters.includeZigZagTransfo +
+        "," +
+        oDevStd_PV.Parameters.ZigZag_R0_ohm +
+        ",Ohm," +
+        oDevStd_PV.Parameters.ZigZag_L0_H +
+        ",H," +
+        oDevStd_PV.Parameters.Vgen_kVRMSLL +
+        ",kVRMSLL," +
+        oDevStd_PV.Parameters.Vdc_kV +
+        ",kVRMSLL," +
+        oDevStd_PV.Parameters.Qfilt +
+        "," +
+        oDevStd_PV.Parameters.Qfilt_unit +
+        "," +
+        oDevStd_PV.Parameters.Rchoke +
+        "," +
+        oDevStd_PV.Parameters.Lchoke +
+        "," +
+        oDevStd_PV.Parameters.includeCollGrid +
+        "," +
+        oDevStd_PV.Parameters.R_Coll_Grid_Ohm +
+        ",Ohm," +
+        oDevStd_PV.Parameters.L_Coll_Grid_H +
+        ",H," +
+        oDevStd_PV.Parameters.C_Coll_Grid_F +
+        ",F\n";
+    }
+    return data_PV;
+  } else if (deviceType == "PV2" || deviceType == 100) {
+    parseScriptFile("WECC_PVPark_m.dwj");
+    var all_WECC_PV = cct.devices(4, -1, 5, "LibType", "WECC PV park");
+    var data_PV = "Name_PV,Type_Park,Section,Parameter,Value,Unit\n";
+    for (var i = 0; i < all_WECC_PV.length; i++) {
+      var devWECC = all_WECC_PV[i]; // took every element in the array of all_SG
+      var oDevWECC_PV = new oDevice_WECC_PV(devWECC);
+      data_PV +=
+        devWECC.getAttribute("Name") +
+        ",WECC,Photovoltaic_park_parameters,N_PV_arrays," +
+        oDevWECC_PV.Parameters.Ngen +
+        ",\n";
+      data_PV += ",,,Frequency," + oDevWECC_PV.Parameters.Freq + ",Hz\n";
+      data_PV +=
+        ",,,Collector_grid_nominal_voltage," +
+        oDevWECC_PV.Parameters.Vgrid_kVRMSLL +
+        ",kVRMSLL\n";
+      data_PV +=
+        ",,,Tx_grid_nominal_voltage(POI)," +
+        oDevWECC_PV.Parameters.Vpoi_kVRMSLL +
+        ",kVRMSLL\n";
+      data_PV +=
+        ",,,Include_ZigZag_transformer_option," +
+        oDevWECC_PV.Parameters.includeZigZagTransfo +
+        ",\n";
+      data_PV +=
+        ",,,R_ZigZag," + oDevWECC_PV.Parameters.ZigZag_R0_ohm + ",Ohm\n";
+      data_PV += ",,,L_ZigZag," + oDevWECC_PV.Parameters.ZigZag_L0_H + ",H\n";
+      data_PV +=
+        ",,Single_pv_array,S_spv," +
+        oDevWECC_PV.Parameters.Sgen +
+        "," +
+        oDevWECC_PV.Parameters.Sgen_unit +
+        "\n";
+      data_PV +=
+        ",,,Inverter_nominal_voltage," +
+        oDevWECC_PV.Parameters.Vgen_kVRMSLL +
+        ",kVRMSLL\n";
+      data_PV +=
+        ",,,DC_voltage," + oDevWECC_PV.Parameters.Vdc_kV + ",kVRMSLL\n";
+      data_PV +=
+        ",,,Q_filt," +
+        oDevWECC_PV.Parameters.Qfilt +
+        "," +
+        oDevWECC_PV.Parameters.Qfilt_unit +
+        "\n";
+      data_PV += ",,,R_Choke," + oDevWECC_PV.Parameters.Rchoke + ",pu\n";
+      data_PV += ",,,L_Choke," + oDevWECC_PV.Parameters.Lchoke + ",pu\n";
+      data_PV +=
+        ",,Collector_grid,Inc_collector," +
+        oDevWECC_PV.Parameters.includeCollGrid +
+        ",\n";
+      data_PV +=
+        ",,,R_collector," + oDevWECC_PV.Parameters.R_Coll_Grid_Ohm + ",Ohm\n";
+      data_PV +=
+        ",,,L_collector," + oDevWECC_PV.Parameters.L_Coll_Grid_H + ",H\n";
+      data_PV +=
+        ",,,C_collector," + oDevWECC_PV.Parameters.C_Coll_Grid_F + ",F\n";
+      data_PV +=
+        ",,Operating_conditions,N_PV_inServ," +
+        oDevWECC_PV.Parameters.Ngen_in_service +
+        ",\n";
+      data_PV += ",,,Q_ctrlMode," + oDevWECC_PV.Parameters.QC_select + ",\n";
+      data_PV += ",,,Reactive_ref," + oDevWECC_PV.Parameters.Qpoi_pu + ",pu\n";
+      data_PV += ",,,P_ctrlMode," + oDevWECC_PV.Parameters.PC_select + ",\n";
+      data_PV += ",,,Active_ref," + oDevWECC_PV.Parameters.Pref_poi + ",pu\n";
+    }
+    parseScriptFile("PVPark_m.dwj");
+    var all_std_PV = cct.devices(4, -1, 5, "LibType", "PV park");
+    for (var j = 0; j < all_std_PV.length; j++) {
+      var devStdPV = all_std_PV[j];
+      var oDevStd_PV = new oDevice_PV(devStdPV);
+      data_PV +=
+        devStdPV.getAttribute("Name") +
+        ",Standar,Photovoltaic_park_parameters,N_PV_arrays," +
+        oDevStd_PV.Parameters.Ngen +
+        ",\n";
+      data_PV += ",,,Frequency," + oDevStd_PV.Parameters.Freq + ",Hz\n";
+      data_PV +=
+        ",,,Collector_grid_nominal_voltage," +
+        oDevStd_PV.Parameters.Vgrid_kVRMSLL +
+        ",kVRMSLL\n";
+      data_PV +=
+        ",,,Tx_grid_nominal_voltage(POI)," +
+        oDevStd_PV.Parameters.Vpoi_kVRMSLL +
+        ",kVRMSLL\n";
+      data_PV +=
+        ",,,Include_ZigZag_transformer_option," +
+        oDevStd_PV.Parameters.includeZigZagTransfo +
+        ",\n";
+      data_PV +=
+        ",,,R_ZigZag," + oDevStd_PV.Parameters.ZigZag_R0_ohm + ",Ohm\n";
+      data_PV += ",,,L_ZigZag," + oDevStd_PV.Parameters.ZigZag_L0_H + ",H\n";
+      data_PV +=
+        ",,Single_pv_array,S_spv," +
+        oDevStd_PV.Parameters.Sgen +
+        "," +
+        oDevStd_PV.Parameters.Sgen_unit +
+        "\n";
+      data_PV +=
+        ",,,Inverter_nominal_voltage," +
+        oDevStd_PV.Parameters.Vgen_kVRMSLL +
+        ",kVRMSLL\n";
+      data_PV += ",,,DC_voltage," + oDevStd_PV.Parameters.Vdc_kV + ",kVRMSLL\n";
+      data_PV +=
+        ",,,Q_filt," +
+        oDevStd_PV.Parameters.Qfilt +
+        "," +
+        oDevStd_PV.Parameters.Qfilt_unit +
+        "\n";
+      data_PV += ",,,R_Choke," + oDevStd_PV.Parameters.Rchoke + ",pu\n";
+      data_PV += ",,,L_Choke," + oDevStd_PV.Parameters.Lchoke + ",pu\n";
+      data_PV +=
+        ",,Collector_grid,Inc_collector," +
+        oDevStd_PV.Parameters.includeCollGrid +
+        ",\n";
+      data_PV +=
+        ",,,R_collector," + oDevStd_PV.Parameters.R_Coll_Grid_Ohm + ",Ohm\n";
+      data_PV +=
+        ",,,L_collector," + oDevStd_PV.Parameters.L_Coll_Grid_H + ",H\n";
+      data_PV +=
+        ",,,C_collector," + oDevStd_PV.Parameters.C_Coll_Grid_F + ",F\n";
+      data_PV +=
+        ",,Operating_conditions,N_PV_inServ," +
+        oDevStd_PV.Parameters.Ngen_in_service +
+        ",\n";
+      data_PV += ",,,Q_ctrlMode," + oDevStd_PV.Parameters.QC_select + ",\n";
+      data_PV += ",,,Reactive_ref," + oDevStd_PV.Parameters.Qpoi_pu + ",pu\n";
+      data_PV += ",,,P_ctrlMode," + oDevStd_PV.Parameters.PC_select + ",\n";
+      data_PV += ",,,Active_ref," + oDevStd_PV.Parameters.Pref_poi + ",pu\n";
+    }
+    return data_PV;
+  } else if (deviceType == "SG" || deviceType == 1) {
+    parseScriptFile("machine_sm_m.dwj");
+    var all_SG = cct.devices(4, -1, 5, "LibType", "synchronous machine");
+    // export data of the all SG in a string
+    var data_AllSG = "Name_of_SG,Type_of_data,Parameter,Value,Unit,Status\n";
+    for (var i = 0; i < all_SG.length; i++) {
+      var devSG = all_SG[i]; // take every element in the array of all_SG
+      var oDevSG = new oDevice_SM(devSG);
+      // SG data
+      if (devSG.getAttribute("Exclude") != "Ex") {
+        data_AllSG +=
+          devSG.getAttribute("Name") +
+          ",Electrical_data,V_a," +
+          oDevSG.Voltage_a +
+          "," +
+          oDevSG.Voltage_units +
+          ",\n";
+        data_AllSG +=
+          ",,V_b," + oDevSG.Voltage_b + "," + oDevSG.Voltage_units + ",\n";
+        data_AllSG +=
+          ",,V_c," + oDevSG.Voltage_c + "," + oDevSG.Voltage_units + ",\n";
+        data_AllSG +=
+          ",,Rated_voltage_(Y-connection)," +
+          oDevSG.Rating_V +
+          ",kVRMSLL" +
+          ",\n";
+        data_AllSG += ",,Rated_power," + oDevSG.Rating_S + ",MVA" + ",\n";
+        data_AllSG += ",,R_a," + oDevSG.Ra + ",pu" + ",\n";
+        data_AllSG += ",,X_l," + oDevSG.Xl + ",pu" + ",\n";
+        data_AllSG += ",,X_0," + oDevSG.X0 + ",pu" + ",\n";
+        data_AllSG += ",,X_d," + oDevSG.Xd + ",pu" + ",\n";
+        data_AllSG += ",,X_q," + oDevSG.Xq + ",pu" + ",\n";
+        data_AllSG += ",,X_dp," + oDevSG.Xdp + ",pu" + ",\n";
+        data_AllSG += ",,X_dpp," + oDevSG.Xdpp + ",pu" + ",\n";
+        data_AllSG += ",,T_dp," + oDevSG.Tdp + ",s" + ",\n";
+        data_AllSG += ",,T_dpp," + oDevSG.Tdpp + ",s" + ",\n";
+        data_AllSG += ",,X_qp," + oDevSG.Xqp + ",pu" + ",\n";
+        data_AllSG += ",,X_qpp," + oDevSG.Xqpp + ",pu" + ",\n";
+        data_AllSG += ",,T_qp," + oDevSG.Tqp + ",s" + ",\n";
+        data_AllSG += ",,T_qpp," + oDevSG.Tqpp + ",s" + ",\n";
+        var H = oDevSG.Mass_data.split(" ");
+        data_AllSG += ",Mechanical_data,H," + H[1] + ",kgm^2/rad" + ",\n";
+      } else {
+        data_AllSG +=
+          devSG.getAttribute("Name") +
+          ",Electrical_data,V_a," +
+          oDevSG.Voltage_a +
+          "," +
+          oDevSG.Voltage_units +
+          ",Ex\n";
+        data_AllSG +=
+          ",,V_b," + oDevSG.Voltage_b + "," + oDevSG.Voltage_units + ",\n";
+        data_AllSG +=
+          ",,V_c," + oDevSG.Voltage_c + "," + oDevSG.Voltage_units + ",\n";
+        data_AllSG +=
+          ",,Rated_voltage_(Y-connection)," +
+          oDevSG.Rating_V +
+          ",kVRMSLL" +
+          ",\n";
+        data_AllSG += ",,Rated_power," + oDevSG.Rating_S + ",MVA" + ",\n";
+        data_AllSG += ",,R_a," + oDevSG.Ra + ",pu" + ",\n";
+        data_AllSG += ",,X_l," + oDevSG.Xl + ",pu" + ",\n";
+        data_AllSG += ",,X_0," + oDevSG.X0 + ",pu" + ",\n";
+        data_AllSG += ",,X_d," + oDevSG.Xd + ",pu" + ",\n";
+        data_AllSG += ",,X_q," + oDevSG.Xq + ",pu" + ",\n";
+        data_AllSG += ",,X_dp," + oDevSG.Xdp + ",pu" + ",\n";
+        data_AllSG += ",,X_dpp," + oDevSG.Xdpp + ",pu" + ",\n";
+        data_AllSG += ",,T_dp," + oDevSG.Tdp + ",s" + ",\n";
+        data_AllSG += ",,T_dpp," + oDevSG.Tdpp + ",s" + ",\n";
+        data_AllSG += ",,X_qp," + oDevSG.Xqp + ",pu" + ",\n";
+        data_AllSG += ",,X_qpp," + oDevSG.Xqpp + ",pu" + ",\n";
+        data_AllSG += ",,T_qp," + oDevSG.Tqp + ",s" + ",\n";
+        data_AllSG += ",,T_qpp," + oDevSG.Tqpp + ",s" + ",\n";
+        var H = oDevSG.Mass_data.split(" ");
+        data_AllSG += ",Mechanical_data,H," + H[1] + ",kgm^2/rad" + ",\n";
+      }
+    }
+    return data_AllSG;
+  } else if (deviceType == "loadLF" || deviceType == 2) {
+    parseScriptFile("pqload_m.dwj");
+    var all_LoadLF_1 = cct.devices(
+      4,
+      -1,
+      6,
+      "LibType",
+      "PQ load with load-flow (LF)"
+    );
+    var all_LoadLF_YG = cct.devices(
+      4,
+      -1,
+      6,
+      "LibType",
+      "PQ load Yg with load-flow (LF)"
+    );
+    var data_loadLF =
+      "Name_LoadLF,LibType,Status,P_loadLF,Unit,Q_loadLF,Unit,p_mw,q_mw,Np,Nq,connectionType\n";
+    var all_LoadLF = []; // only one array
+    for (var i = 0; i < all_LoadLF_1.length; i++) {
+      all_LoadLF.push(all_LoadLF_1[i]);
+    }
+    for (var j = 0; j < all_LoadLF_YG.length; j++) {
+      all_LoadLF.push(all_LoadLF_YG[j]);
+    }
+    for (var i = 0; i < all_LoadLF.length; i++) {
+      var devLoadLF = all_LoadLF[i];
+      var exclude_attribute = devLoadLF.getAttribute("Exclude");
+      var status = exclude_attribute === "Ex" ? 0 : 1;
+      var oDevLoadLF = new oDevice_pqload(devLoadLF);
+      var active_power_3ph = 3 * Number(oDevLoadLF.Parameters.activePower_A);
+      var LibType = devLoadLF.getAttribute("LibType");
+      var reactive_power_3ph =
+        3 * Number(oDevLoadLF.Parameters.reactivePower_A);
+      data_loadLF +=
+        devLoadLF.getAttribute("Name") +
+        "," +
+        LibType +
+        "," +
+        status +
+        "," +
+        oDevLoadLF.Parameters.activePower_A +
+        "," +
+        oDevLoadLF.Parameters.activePower_units_A +
+        "," +
+        oDevLoadLF.Parameters.reactivePower_A +
+        "," +
+        oDevLoadLF.Parameters.reactivePower_units_A +
+        "," +
+        String(active_power_3ph) +
+        "," +
+        String(reactive_power_3ph) +
+        "," +
+        oDevLoadLF.Parameters.Np_A +
+        "," +
+        oDevLoadLF.Parameters.Nq_A +
+        "," +
+        oDevLoadLF.Parameters.connectionType +
+        "\n";
+    }
+    return data_loadLF;
+  } else if (deviceType == "loadLF2" || deviceType == 22) {
+    // Deprecated, old version
+    parseScriptFile("pqload_m.dwj");
+    var all_LoadLF = cct.devices(
+      4,
+      -1,
+      6,
+      "LibType",
+      "PQ load with load-flow (LF)"
+    ); // search in the first layer
+    var data_loadLF = "Name_LoadLF,LibType,Parameter,Value, Unit\n";
+    for (var i = 0; i < all_LoadLF.length; i++) {
+      var devLoadLF = all_LoadLF[i];
+      var oDevLoadLF = new oDevice_pqload(devLoadLF);
+      data_loadLF +=
+        devLoadLF.getAttribute("Name") +
+        "," +
+        devLoadLF.getAttribute("LibType") +
+        ",Nominal_Voltage," +
+        oDevLoadLF.Parameters.voltage_A +
+        "," +
+        oDevLoadLF.Parameters.voltage_units_A +
+        "\n";
+      data_loadLF +=
+        ",,P_loadLF," +
+        oDevLoadLF.Parameters.activePower_A +
+        "," +
+        oDevLoadLF.Parameters.activePower_units_A +
+        "\n";
+      data_loadLF += ",,Np," + oDevLoadLF.Parameters.Np_A + "," + "\n";
+      data_loadLF +=
+        ",,Q_loadLF," +
+        oDevLoadLF.Parameters.reactivePower_A +
+        "," +
+        oDevLoadLF.Parameters.reactivePower_units_A +
+        "\n";
+      data_loadLF += ",,Nq," + oDevLoadLF.Parameters.Nq_A + "," + "\n";
+      data_loadLF +=
+        ",,connectionType," + oDevLoadLF.Parameters.connectionType + "," + "\n";
+    }
+    var all_LoadLF_YG = cct.devices(
+      4,
+      -1,
+      6,
+      "LibType",
+      "PQ load Yg with load-flow (LF)"
+    );
+    for (var j = 0; j < all_LoadLF_YG.length; j++) {
+      var devLoadLF = all_LoadLF_YG[j];
+      var oDevLoadLF = new oDevice_pqload(devLoadLF);
+      data_loadLF +=
+        devLoadLF.getAttribute("Name") +
+        "," +
+        devLoadLF.getAttribute("LibType") +
+        ",Nominal_Voltage," +
+        oDevLoadLF.Parameters.voltage_A +
+        "," +
+        oDevLoadLF.Parameters.voltage_units_A +
+        "\n";
+      data_loadLF +=
+        ",,P_loadLF," +
+        oDevLoadLF.Parameters.activePower_A +
+        "," +
+        oDevLoadLF.Parameters.activePower_units_A +
+        "\n";
+      data_loadLF += ",,Np," + oDevLoadLF.Parameters.Np_A + "," + "\n";
+      data_loadLF +=
+        ",,Q_loadLF," +
+        oDevLoadLF.Parameters.reactivePower_A +
+        "," +
+        oDevLoadLF.Parameters.reactivePower_units_A +
+        "\n";
+      data_loadLF += ",,Nq," + oDevLoadLF.Parameters.Nq_A + "," + "\n";
+      data_loadLF +=
+        ",,connectionType," + oDevLoadLF.Parameters.connectionType + "," + "\n";
+    }
+    return data_loadLF;
+  } else if (deviceType == "lines" || deviceType == 3) {
+    parseScriptFile("CP_MultiphaseLineCable_m.dwj");
+    var all_lines_CP = cct.devices(
+      4,
+      -1,
+      6,
+      "LibType",
+      "CP line/cable 3-phase"
+    ); //6 top of the circuit
+    var data_lines = "Name_Lines,Lib_Type,Parameter,Value,Unit\n";
+    //
+    for (var i = 0; i < all_lines_CP.length; i++) {
+      var devLines = all_lines_CP[i];
+      var oDevLines = new oDevice_CP_MultiphaseLineCable(devLines);
+      data_lines +=
+        devLines.getAttribute("Name") +
+        "," +
+        devLines.getAttribute("LibType") +
+        ",Length," +
+        oDevLines.Parameters.Length +
+        ",km\n";
+      var line_aux = oDevLines.ModeDataGrid.split("\n");
+      var line_aux2 = line_aux[0].split("\t"); // rline0 R1
+      var line_aux3 = line_aux[1].split("\t"); //rline R0
+      // TODO alert(oDevLines.Parameters.LC_units_R_units);
+      data_lines +=
+        ",,R0," +
+        line_aux2[1] +
+        "," +
+        "Ohm" +
+        // oDevLines.Parameters.LC_units_R_units +
+        "\n";
+      data_lines +=
+        ",,L0," +
+        line_aux2[2] +
+        "," +
+        oDevLines.Parameters.LC_units_L_units +
+        "\n";
+      data_lines +=
+        ",,C0," +
+        line_aux2[3] +
+        "," +
+        oDevLines.Parameters.LC_units_C_units +
+        "\n";
+      data_lines +=
+        ",,R1," +
+        line_aux3[1] +
+        "," +
+        "Ohm" +
+        // oDevLines.Parameters.LC_units_R_units +
+        "\n";
+      data_lines +=
+        ",,L1," +
+        line_aux3[2] +
+        "," +
+        oDevLines.Parameters.LC_units_L_units +
+        "\n";
+      data_lines +=
+        ",,C1," +
+        line_aux3[3] +
+        "," +
+        oDevLines.Parameters.LC_units_C_units +
+        "\n";
+    }
+    // parseScriptFile("pi_info.dwj");
+    var all_lines_PI = cct.devices(4, -1, 6, "LibType", "PI line 3-phase");
+    for (var j = 0; j < all_lines_PI.length; j++) {
+      var devLines = all_lines_PI[j];
+      var a = devLines.getAttribute("ModelData").split("\n");
+      var R = a[0].split(/\s/);
+      var L = a[1].split(/\s/);
+      var C = a[2].split(/\s/);
+      data_lines +=
+        devLines.getAttribute("Name") +
+        "," +
+        devLines.getAttribute("LibType") +
+        ",R0," +
+        R[0] +
+        ",Ohm\n";
+      data_lines += ",,L0," + L[0] + ",Ohm\n";
+      data_lines += ",,C0," + C[0] + "," + String.fromCharCode(181) + "F\n";
+      data_lines += ",,R1," + R[1] + ",Ohm\n";
+      data_lines += ",,L1," + L[1] + ",Ohm\n";
+      data_lines += ",,C1," + C[1] + "," + String.fromCharCode(181) + "F\n";
+    }
+    return data_lines;
+  } else if (deviceType == "TF" || deviceType == 4) {
+    parseScriptFile("machine_sm_m.dwj");
+    parseScriptFile("trs3_m.dwj");
+    parseScriptFile("trs3_3winding_m.dwj");
+    parseScriptFile("set_check.js");
+    parseScriptFile("ydd/ydd_modeldata.dwj"); //_function find_modeldata
+    parseScriptFile("yyd/saveModelData.js");
+    var data_TF = "Name_of_TF,N_of_Windings,Parameter,Value,Unit,AssociateSG\n";
+
+    var all_SG = cct.devices(4, -1, 5, "LibType", "synchronous machine");
+    // search for any TF associated to SG
+    for (var i = 0; i < all_SG.length; i++) {
+      var devSG = all_SG[i]; // take every element in the array of all_SG
+      var oDevSG = new oDevice_SM(devSG);
+      var cct2 = devSG.circuit; // take the elements in the page of the SG
+      var devTF = cct2.devices("LibName", "transformers.clf"); //select the TFs in the page
+      // If i found more than 1 TF
+      if (devTF.length > 1) {
+        // made a loop for the number of elements in the subcircuit
+        for (var k = 0; k < devTF.length; k++) {
+          if (devTF[k].getAttribute("LibType") == "YgYgD nameplate input") {
+            var oDevTF = new oDevice_yyd(devTF[k]);
+            data_TF +=
+              devTF[k].getAttribute("Name") +
+              ",3," +
+              "f," +
+              oDevTF.f +
+              ",Hz," +
+              devSG.getAttribute("Name") +
+              "\n";
+            data_TF += ",,VW1," + oDevTF.VW1 + ",kV_RMSLL" + ",\n";
+            data_TF += ",,VW2," + oDevTF.VW2 + ",kV_RMSLL" + ",\n";
+            data_TF += ",,VW3," + oDevTF.VW3 + ",kV_RMSLL" + ",\n";
+            data_TF += ",,SW1," + oDevTF.SW1 + ",MVA" + ",\n";
+            data_TF += ",,SW2," + oDevTF.SW2 + ",MVA" + ",\n";
+            data_TF += ",,SW3," + oDevTF.SW3 + ",MVA" + ",\n";
+            data_TF += ",,R12," + oDevTF.RW1 + "," + oDevTF.pRunits + ",\n";
+            data_TF += ",,R13," + oDevTF.RW2 + "," + oDevTF.pRunits + ",\n";
+            data_TF += ",,R23," + oDevTF.RW3 + "," + oDevTF.pRunits + ",\n";
+            data_TF += ",,X12," + oDevTF.XW1 + "," + oDevTF.pXunits + ",\n";
+            data_TF += ",,X13," + oDevTF.XW2 + "," + oDevTF.pXunits + ",\n";
+            data_TF += ",,X23," + oDevTF.XW3 + "," + oDevTF.pXunits + ",\n";
+            data_TF += ",,Tap_ratio," + oDevTF.tap_ratio + ",,\n";
+          } else if (
+            devTF[k].getAttribute("LibType") == "YgDD nameplate input"
+          ) {
+            var oDevTF = new oDevice_yyd(devTF[k]);
+            data_TF +=
+              devTF[k].getAttribute("Name") +
+              ",3," +
+              "f," +
+              oDevTF.f +
+              ",Hz," +
+              devSG.getAttribute("Name");
+            ("\n");
+            data_TF += ",,VW1," + oDevTF.VW1 + ",kV_RMSLL" + ",\n";
+            data_TF += ",,VW2," + oDevTF.VW2 + ",kV_RMSLL" + ",\n";
+            data_TF += ",,VW3," + oDevTF.VW3 + ",kV_RMSLL" + ",\n";
+            data_TF += ",,SW1," + oDevTF.SW1 + ",MVA" + ",\n";
+            data_TF += ",,SW2," + oDevTF.SW2 + ",MVA" + ",\n";
+            data_TF += ",,SW3," + oDevTF.SW3 + ",MVA" + ",\n";
+            data_TF += ",,R12," + oDevTF.RW1 + "," + oDevTF.pRunits + ",\n";
+            data_TF += ",,R13," + oDevTF.RW2 + "," + oDevTF.pRunits + ",\n";
+            data_TF += ",,R23," + oDevTF.RW3 + "," + oDevTF.pRunits + ",\n";
+            data_TF += ",,X12," + oDevTF.XW1 + "," + oDevTF.pXunits + ",\n";
+            data_TF += ",,X13," + oDevTF.XW2 + "," + oDevTF.pXunits + ",\n";
+            data_TF += ",,X23," + oDevTF.XW3 + "," + oDevTF.pXunits + ",\n";
+            data_TF += ",,Tap_ratio," + oDevTF.tap_ratio + ",,\n";
+          } else {
+            var oDevTF = new oDevice_yy(devTF[k]);
+            data_TF +=
+              devTF[k].getAttribute("Name") +
+              ",2,S," +
+              oDevTF.S +
+              ",MVA," +
+              devSG.getAttribute("Name") +
+              "\n";
+            data_TF += ",,f," + oDevTF.f + ",Hz" + ",\n";
+            data_TF += ",,WV1," + oDevTF.V1 + ",kV_RMSLL" + ",\n";
+            data_TF += ",,WV2," + oDevTF.V2 + ",kV_RMSLL" + ",\n";
+            data_TF += ",,Tap_ratio," + oDevTF.tap_ratio + ",,\n";
+            data_TF +=
+              ",,Winding_R," + oDevTF.R1 + "," + oDevTF.R1units + ",\n";
+            data_TF +=
+              ",,Winding_X," + oDevTF.X1 + "," + oDevTF.X1units + ",\n";
+            data_TF += ",,Winding_impedance_on_winding_1," + oDevTF.DW + ",,\n";
+            // data_TF += ",Winding_checkbox," + oDevTF.DWcheckb + ",,\n"; // 1 for check, 0 non.
+          }
+        }
+      } else {
+        //in other case i have only 1 element
+        if (devTF[0].getAttribute("LibType") == "YgYgD nameplate input") {
+          var oDevTF = new oDevice_yyd(devTF[0]);
+          data_TF +=
+            devTF[0].getAttribute("Name") +
+            ",3," +
+            "f," +
+            oDevTF.f +
+            ",Hz," +
+            devSG.getAttribute("Name") +
+            "\n";
+          data_TF += ",,VW1," + oDevTF.VW1 + ",kV_RMSLL" + ",\n";
+          data_TF += ",,VW2," + oDevTF.VW2 + ",kV_RMSLL" + ",\n";
+          data_TF += ",,VW3," + oDevTF.VW3 + ",kV_RMSLL" + ",\n";
+          data_TF += ",,SW1," + oDevTF.SW1 + ",MVA" + ",\n";
+          data_TF += ",,SW2," + oDevTF.SW2 + ",MVA" + ",\n";
+          data_TF += ",,SW3," + oDevTF.SW3 + ",MVA" + ",\n";
+          data_TF += ",,R12," + oDevTF.RW1 + "," + oDevTF.pRunits + ",\n";
+          data_TF += ",,R13," + oDevTF.RW2 + "," + oDevTF.pRunits + ",\n";
+          data_TF += ",,R23," + oDevTF.RW3 + "," + oDevTF.pRunits + ",\n";
+          data_TF += ",,X12," + oDevTF.XW1 + "," + oDevTF.pXunits + ",\n";
+          data_TF += ",,X13," + oDevTF.XW2 + "," + oDevTF.pXunits + ",\n";
+          data_TF += ",,X23," + oDevTF.XW3 + "," + oDevTF.pXunits + ",\n";
+          data_TF += ",,Tap_ratio," + oDevTF.tap_ratio + ",,\n";
+        } else if (devTF[0].getAttribute("LibType") == "YgDD nameplate input") {
+          var oDevTF = new oDevice_yyd(devTF[0]);
+          data_TF +=
+            devTF[0].getAttribute("Name") +
+            ",3," +
+            "f," +
+            oDevTF.f +
+            ",Hz," +
+            devSG.getAttribute("Name");
+          ("\n");
+          data_TF += ",,VW1," + oDevTF.VW1 + ",kV_RMSLL" + ",\n";
+          data_TF += ",,VW2," + oDevTF.VW2 + ",kV_RMSLL" + ",\n";
+          data_TF += ",,VW3," + oDevTF.VW3 + ",kV_RMSLL" + ",\n";
+          data_TF += ",,SW1," + oDevTF.SW1 + ",MVA" + ",\n";
+          data_TF += ",,SW2," + oDevTF.SW2 + ",MVA" + ",\n";
+          data_TF += ",,SW3," + oDevTF.SW3 + ",MVA" + ",\n";
+          data_TF += ",,R12," + oDevTF.RW1 + "," + oDevTF.pRunits + ",\n";
+          data_TF += ",,R13," + oDevTF.RW2 + "," + oDevTF.pRunits + ",\n";
+          data_TF += ",,R23," + oDevTF.RW3 + "," + oDevTF.pRunits + ",\n";
+          data_TF += ",,X12," + oDevTF.XW1 + "," + oDevTF.pXunits + ",\n";
+          data_TF += ",,X13," + oDevTF.XW2 + "," + oDevTF.pXunits + ",\n";
+          data_TF += ",,X23," + oDevTF.XW3 + "," + oDevTF.pXunits + ",\n";
+          data_TF += ",,Tap_ratio," + oDevTF.tap_ratio + ",,\n";
+        } else {
+          var oDevTF = new oDevice_yy(devTF[0]);
+          data_TF +=
+            devTF[0].getAttribute("Name") +
+            ",2,S," +
+            oDevTF.S +
+            ",MVA," +
+            devSG.getAttribute("Name") +
+            "\n";
+          data_TF += ",,f," + oDevTF.f + ",Hz" + ",\n";
+          data_TF += ",,WV1," + oDevTF.V1 + ",kV_RMSLL" + ",\n";
+          data_TF += ",,WV2," + oDevTF.V2 + ",kV_RMSLL" + ",\n";
+          data_TF += ",,Tap_ratio," + oDevTF.tap_ratio + ",,\n";
+          data_TF += ",,Winding_R," + oDevTF.R1 + "," + oDevTF.R1units + ",\n";
+          data_TF += ",,Winding_X," + oDevTF.X1 + "," + oDevTF.X1units + ",\n";
+          data_TF += ",,Winding_impedance_on_winding_1," + oDevTF.DW + ",,\n";
+          // data_TF += ",Winding_checkbox," + oDevTF.DWcheckb + ",,\n"; // 1 for check, 0 non.
+        }
+      }
+    }
+    // Search for the tf in the top level
+    var all_topTF = cct.devices(4, -1, 6, "LibName", "transformers.clf");
+    for (var j = 0; j < all_topTF.length; j++) {
+      var devTF = all_topTF[j];
+      if (devTF.getAttribute("LibType") == "YgYgD nameplate input") {
+        var oDevTF = new oDevice_yyd(devTF);
+        data_TF +=
+          devTF.getAttribute("Name") +
+          ",3," +
+          "f," +
+          oDevTF.f +
+          ",Hz,None" +
+          "\n";
+        data_TF += ",,VW1," + oDevTF.VW1 + ",kV_RMSLL" + ",\n";
+        data_TF += ",,VW2," + oDevTF.VW2 + ",kV_RMSLL" + ",\n";
+        data_TF += ",,VW3," + oDevTF.VW3 + ",kV_RMSLL" + ",\n";
+        data_TF += ",,SW1," + oDevTF.SW1 + ",MVA" + ",\n";
+        data_TF += ",,SW2," + oDevTF.SW2 + ",MVA" + ",\n";
+        data_TF += ",,SW3," + oDevTF.SW3 + ",MVA" + ",\n";
+        data_TF += ",,R12," + oDevTF.RW1 + "," + oDevTF.pRunits + ",\n";
+        data_TF += ",,R13," + oDevTF.RW2 + "," + oDevTF.pRunits + ",\n";
+        data_TF += ",,R23," + oDevTF.RW3 + "," + oDevTF.pRunits + ",\n";
+        data_TF += ",,X12," + oDevTF.XW1 + "," + oDevTF.pXunits + ",\n";
+        data_TF += ",,X13," + oDevTF.XW2 + "," + oDevTF.pXunits + ",\n";
+        data_TF += ",,X23," + oDevTF.XW3 + "," + oDevTF.pXunits + ",\n";
+        data_TF += ",,Tap_ratio," + oDevTF.tap_ratio + ",,\n";
+      } else if (devTF.getAttribute("LibType") == "YgDD nameplate input") {
+        var oDevTF = new oDevice_yyd(devTF);
+        data_TF +=
+          devTF.getAttribute("Name") +
+          ",3," +
+          "f," +
+          oDevTF.f +
+          ",Hz,None" +
+          "\n";
+        data_TF += ",,VW1," + oDevTF.VW1 + ",kV_RMSLL" + ",\n";
+        data_TF += ",,VW2," + oDevTF.VW2 + ",kV_RMSLL" + ",\n";
+        data_TF += ",,VW3," + oDevTF.VW3 + ",kV_RMSLL" + ",\n";
+        data_TF += ",,SW1," + oDevTF.SW1 + ",MVA" + ",\n";
+        data_TF += ",,SW2," + oDevTF.SW2 + ",MVA" + ",\n";
+        data_TF += ",,SW3," + oDevTF.SW3 + ",MVA" + ",\n";
+        data_TF += ",,R12," + oDevTF.RW1 + "," + oDevTF.pRunits + ",\n";
+        data_TF += ",,R13," + oDevTF.RW2 + "," + oDevTF.pRunits + ",\n";
+        data_TF += ",,R23," + oDevTF.RW3 + "," + oDevTF.pRunits + ",\n";
+        data_TF += ",,X12," + oDevTF.XW1 + "," + oDevTF.pXunits + ",\n";
+        data_TF += ",,X13," + oDevTF.XW2 + "," + oDevTF.pXunits + ",\n";
+        data_TF += ",,X23," + oDevTF.XW3 + "," + oDevTF.pXunits + ",\n";
+        data_TF += ",,Tap_ratio," + oDevTF.tap_ratio + ",,\n";
+      } else {
+        var oDevTF = new oDevice_yy(devTF);
+        data_TF +=
+          devTF.getAttribute("Name") + ",2,S," + oDevTF.S + ",MVA,None" + "\n";
+        data_TF += ",,f," + oDevTF.f + ",Hz" + ",\n";
+        data_TF += ",,WV1," + oDevTF.V1 + ",kV_RMSLL" + ",\n";
+        data_TF += ",,WV2," + oDevTF.V2 + ",kV_RMSLL" + ",\n";
+        data_TF += ",,Tap_ratio," + oDevTF.tap_ratio + ",,\n";
+        data_TF += ",,Winding_R," + oDevTF.R1 + "," + oDevTF.R1units + ",\n";
+        data_TF += ",,Winding_X," + oDevTF.X1 + "," + oDevTF.X1units + ",\n";
+        data_TF += ",,Winding_impedance_on_winding_1," + oDevTF.DW + ",,\n";
+        // data_TF += ",Winding_checkbox," + oDevTF.DWcheckb + ",,\n"; // 1 for check, 0 non.
+      }
+    }
+    return data_TF;
+  } else if (deviceType == "WP" || deviceType == 5) {
+    parseScriptFile("WECC_WP_m.dwj");
+    var data_WP =
+      "Name_WP,LibType,N_wind_turbines,N_WT_inServ,Snom_WP,Unit,Active_ref,Unit,Turbine Power,Unit,Q_ctrlMode,Reactive_ref,Unit,s_nom,p_mw,q_mw,p_pu,q_pu,Frequency,Unit,Collector_grid_nominal_voltage,Unit,Tx_grid_nominal_voltage(POI),Unit,Include_ZigZag_transformer_option,R_ZigZag,Unit,L_ZigZag,Unit,Inverter_nominal_voltage,Unit,DC_voltage,Unit,Q_filt,Unit,R_Choke,Unit,L_Choke,Unit,Inc_collector,R_collector,Unit,L_collector,Unit,C_collector,Unit,Wind Speed\n";
+
+    var all_WECC_WP_1 = cct.devices(4, -1, 5, "LibType", "WECC WP"); //old name
+    var all_WECC_WP_2 = cct.devices(4, -1, 5, "LibType", "WECC Wind park"); //new name
+    var all_WECC_WP = []; // only one array
+    for (var i = 0; i < all_WECC_WP_1.length; i++) {
+      all_WECC_WP.push(all_WECC_WP_1[i]);
+    }
+    for (var j = 0; j < all_WECC_WP_2.length; j++) {
+      all_WECC_WP.push(all_WECC_WP_2[j]);
+    }
+    for (var i = 0; i < all_WECC_WP.length; i++) {
+      var devWECC_WP = all_WECC_WP[i];
+      var oDevWECC_WP = new oDevice_WECC_WP(devWECC_WP);
+      var ngen_in_service_WECC = oDevWECC_WP.Parameters.Ngen_in_service;
+      var s_gen_WECC = oDevWECC_WP.Parameters.Sgen;
+      var plant_rated_power_WECC =
+        Number(ngen_in_service_WECC) * Number(s_gen_WECC);
+      var p_turbine_WECC = oDevWECC_WP.Parameters.Pref_poi;
+      var active_power_mw_poi_WECC =
+        Number(plant_rated_power_WECC) * Number(p_turbine_WECC);
+      active_power_mw_poi_WECC = active_power_mw_poi_WECC.toFixed(8);
+      var active_power_pu_poi_WECC =
+        active_power_mw_poi_WECC / plant_rated_power_WECC;
+      active_power_pu_poi_WECC = active_power_pu_poi_WECC.toFixed(8);
+      var reactive_power_pu_poi_WECC = Number(oDevWECC_WP.Parameters.Qpoi_pu);
+      reactive_power_pu_poi_WECC = reactive_power_pu_poi_WECC.toFixed(8);
+      var reactive_power_mw_poi_WECC =
+        Number(plant_rated_power_WECC) * Number(reactive_power_pu_poi_WECC);
+      reactive_power_mw_poi_WECC = reactive_power_mw_poi_WECC.toFixed(8);
+      data_WP +=
+        devWECC_WP.getAttribute("Name") +
+        "," +
+        devWECC_WP.getAttribute("LibType") +
+        "," +
+        oDevWECC_WP.Parameters.Ngen +
+        "," +
+        ngen_in_service_WECC +
+        "," +
+        oDevWECC_WP.Parameters.Sgen +
+        "," +
+        oDevWECC_WP.Parameters.Sgen_unit +
+        "," +
+        oDevWECC_WP.Parameters.Pref_poi +
+        ",pu,,," +
+        oDevWECC_WP.Parameters.QC_select +
+        "," +
+        oDevWECC_WP.Parameters.Qpoi_pu +
+        ",pu," +
+        String(plant_rated_power_WECC) +
+        "," +
+        String(active_power_mw_poi_WECC) +
+        "," +
+        String(reactive_power_mw_poi_WECC) +
+        "," +
+        String(active_power_pu_poi_WECC) +
+        "," +
+        String(reactive_power_pu_poi_WECC) +
+        "," +
+        oDevWECC_WP.Parameters.Freq +
+        ",Hz," +
+        oDevWECC_WP.Parameters.Vgrid_kVRMSLL +
+        ",kVRMSLL," +
+        oDevWECC_WP.Parameters.Vpoi_kVRMSLL +
+        ",kVRMSLL," +
+        oDevWECC_WP.Parameters.includeZigZagTransfo +
+        "," +
+        oDevWECC_WP.Parameters.ZigZag_R0_ohm +
+        ",Ohm," +
+        oDevWECC_WP.Parameters.ZigZag_L0_H +
+        ",H," +
+        oDevWECC_WP.Parameters.Vgen_kVRMSLL +
+        ",kVRMSLL," +
+        oDevWECC_WP.Parameters.Vdc_kV +
+        ",kVRMSLL," +
+        oDevWECC_WP.Parameters.Qfilt +
+        "," +
+        oDevWECC_WP.Parameters.Qfilt_unit +
+        "," +
+        oDevWECC_WP.Parameters.Rchoke +
+        ",pu," +
+        oDevWECC_WP.Parameters.Lchoke +
+        ",pu," +
+        oDevWECC_WP.Parameters.includeCollGrid +
+        "," +
+        oDevWECC_WP.Parameters.R_Coll_Grid_Ohm +
+        ",Ohm," +
+        oDevWECC_WP.Parameters.L_Coll_Grid_H +
+        ",H," +
+        oDevWECC_WP.Parameters.C_Coll_Grid_F +
+        ",F,\n";
+    }
+
+    parseScriptFile("WP_DFIG_m.dwj");
+    var all_WP_DFIG = cct.devices(4, -1, 5, "LibType", "DFIG Wind park");
+    for (var j = 0; j < all_WP_DFIG.length; j++) {
+      var devWP_DFIG = all_WP_DFIG[j];
+      var oDevWP_DFIG = new oDevice_WP_DFIG(devWP_DFIG);
+      var ngen_in_service = oDevWP_DFIG.Parameters.Ngen_in_service;
+      var s_gen = oDevWP_DFIG.Parameters.Sgen;
+      var plant_rated_power = Number(ngen_in_service) * Number(s_gen); //we use only ngen_in_service
+      var p_turbine = oDevWP_DFIG.Parameters.Pgen;
+      var active_power_mw_poi = Number(plant_rated_power) * Number(p_turbine);
+      active_power_mw_poi = active_power_mw_poi.toFixed(8);
+      var active_power_pu_poi = active_power_mw_poi / plant_rated_power;
+      active_power_pu_poi = active_power_pu_poi.toFixed(8);
+      var reactive_power_pu_poi = Number(oDevWP_DFIG.Parameters.Qpoi_pu);
+      reactive_power_pu_poi = reactive_power_pu_poi.toFixed(8);
+      var reactive_power_mw_poi =
+        Number(plant_rated_power) * Number(reactive_power_pu_poi);
+      reactive_power_mw_poi = reactive_power_mw_poi.toFixed(8);
+      data_WP +=
+        devWP_DFIG.getAttribute("Name") +
+        "," +
+        devWP_DFIG.getAttribute("LibType") +
+        "," +
+        oDevWP_DFIG.Parameters.Ngen +
+        "," +
+        ngen_in_service +
+        "," +
+        oDevWP_DFIG.Parameters.Sgen +
+        "," +
+        oDevWP_DFIG.Parameters.Sgen_unit +
+        ",,," +
+        oDevWP_DFIG.Parameters.Pgen +
+        "," +
+        oDevWP_DFIG.Parameters.Pgen_unit +
+        "," +
+        oDevWP_DFIG.Parameters.QC_select +
+        "," +
+        oDevWP_DFIG.Parameters.Qpoi_pu +
+        ",pu," +
+        String(plant_rated_power) +
+        "," +
+        String(active_power_mw_poi) +
+        "," +
+        String(reactive_power_mw_poi) +
+        "," +
+        String(active_power_pu_poi) +
+        "," +
+        String(reactive_power_pu_poi) +
+        "," +
+        oDevWP_DFIG.Parameters.Freq +
+        ",Hz," +
+        oDevWP_DFIG.Parameters.Vgrid_kVRMSLL +
+        ",kVRMSLL," +
+        oDevWP_DFIG.Parameters.Vpoi_kVRMSLL +
+        ",kVRMSLL," +
+        oDevWP_DFIG.Parameters.includeZigZagTransfo +
+        "," +
+        oDevWP_DFIG.Parameters.ZigZag_R0_ohm +
+        ",Ohm," +
+        oDevWP_DFIG.Parameters.ZigZag_L0_H +
+        ",H,,,,," +
+        oDevWP_DFIG.Parameters.Qfilt +
+        "," +
+        oDevWP_DFIG.Parameters.Qfilt_unit +
+        "," +
+        oDevWP_DFIG.Parameters.Rchoke +
+        ",pu," +
+        oDevWP_DFIG.Parameters.Lchoke +
+        ",pu," +
+        oDevWP_DFIG.Parameters.includeCollGrid +
+        "," +
+        oDevWP_DFIG.Parameters.R_Coll_Grid_Ohm +
+        ",Ohm," +
+        oDevWP_DFIG.Parameters.L_Coll_Grid_H +
+        ",H," +
+        oDevWP_DFIG.Parameters.C_Coll_Grid_F +
+        ",F," +
+        oDevWP_DFIG.Parameters.Mean_wind_speed +
+        "\n";
+    }
+
+    parseScriptFile("WP_FC_m.dwj");
+    var all_WP_FC = cct.devices(4, -1, 5, "LibType", "FC Wind park");
+    for (var k = 0; k < all_WP_FC.length; k++) {
+      var devWP_FC = all_WP_FC[k];
+      var oDevWP_FC = new oDevice_WP_FC(devWP_FC);
+
+      var ngen_in_service_FC = oDevWP_FC.Parameters.Ngen_in_service;
+      var s_gen_FC = oDevWP_FC.Parameters.Sgen;
+      var plant_rated_power_FC = Number(ngen_in_service_FC) * Number(s_gen_FC);
+      var p_turbine_FC = oDevWP_FC.Parameters.Pgen;
+      var active_power_mw_poi_FC =
+        Number(plant_rated_power_FC) * Number(p_turbine_FC);
+      active_power_mw_poi_FC = active_power_mw_poi_FC.toFixed(8);
+      var active_power_pu_poi_FC =
+        active_power_mw_poi_FC / plant_rated_power_FC;
+      active_power_pu_poi_FC = active_power_pu_poi_FC.toFixed(8);
+      var reactive_power_pu_poi_FC = Number(oDevWP_FC.Parameters.Qpoi_pu);
+      reactive_power_pu_poi_FC = reactive_power_pu_poi_FC.toFixed(8);
+      var reactive_power_mw_poi_FC =
+        Number(plant_rated_power_FC) * Number(reactive_power_pu_poi_FC);
+      reactive_power_mw_poi_FC = reactive_power_mw_poi_FC.toFixed(8);
+
+      data_WP +=
+        devWP_FC.getAttribute("Name") +
+        "," +
+        devWP_FC.getAttribute("LibType") +
+        "," +
+        oDevWP_FC.Parameters.Ngen +
+        "," +
+        ngen_in_service_FC +
+        "," +
+        oDevWP_FC.Parameters.Sgen +
+        "," +
+        oDevWP_FC.Parameters.Sgen_unit +
+        ",,," +
+        oDevWP_FC.Parameters.Pgen +
+        "," +
+        oDevWP_FC.Parameters.Pgen_unit +
+        "," +
+        oDevWP_FC.Parameters.QC_select +
+        "," +
+        oDevWP_FC.Parameters.Qpoi_pu +
+        ",pu," +
+        String(plant_rated_power_FC) +
+        "," +
+        String(active_power_mw_poi_FC) +
+        "," +
+        String(reactive_power_mw_poi_FC) +
+        "," +
+        String(active_power_pu_poi_FC) +
+        "," +
+        String(reactive_power_pu_poi_FC) +
+        "," +
+        oDevWP_FC.Parameters.Freq +
+        ",Hz," +
+        oDevWP_FC.Parameters.Vgrid_kVRMSLL +
+        ",kVRMSLL," +
+        oDevWP_FC.Parameters.Vpoi_kVRMSLL +
+        ",kVRMSLL," +
+        oDevWP_FC.Parameters.includeZigZagTransfo +
+        "," +
+        oDevWP_FC.Parameters.ZigZag_R0_ohm +
+        ",Ohm," +
+        oDevWP_FC.Parameters.ZigZag_L0_H +
+        ",H,,,,," +
+        oDevWP_FC.Parameters.Qfilt +
+        "," +
+        oDevWP_FC.Parameters.Qfilt_unit +
+        "," +
+        oDevWP_FC.Parameters.Rchoke +
+        ",pu," +
+        oDevWP_FC.Parameters.Lchoke +
+        ",pu," +
+        oDevWP_FC.Parameters.includeCollGrid +
+        "," +
+        oDevWP_FC.Parameters.R_Coll_Grid_Ohm +
+        ",Ohm," +
+        oDevWP_FC.Parameters.L_Coll_Grid_H +
+        ",H," +
+        oDevWP_FC.Parameters.C_Coll_Grid_F +
+        ",F," +
+        oDevWP_FC.Parameters.Mean_wind_speed +
+        "\n";
+    }
+
+    return data_WP;
+  } else if (deviceType == "WP2" || deviceType == 55) {
+    parseScriptFile("WECC_WP_m.dwj");
+    var data_WP = "Name_WP,Type_Park,Section,Parameter,Value,Unit\n";
+    var all_WECC_WP_1 = cct.devices(4, -1, 5, "LibType", "WECC WP"); //old name
+    var all_WECC_WP_2 = cct.devices(4, -1, 5, "LibType", "WECC Wind park"); //new name
+    var all_WECC_WP = []; // only one array
+    for (var i = 0; i < all_WECC_WP_1.length; i++) {
+      all_WECC_WP.push(all_WECC_WP_1[i]);
+    }
+    for (var j = 0; j < all_WECC_WP_2.length; j++) {
+      all_WECC_WP.push(all_WECC_WP_2[j]);
+    }
+
+    for (var i = 0; i < all_WECC_WP.length; i++) {
+      var devWECC_WP = all_WECC_WP[i];
+      var oDevWECC_WP = new oDevice_WECC_WP(devWECC_WP);
+      data_WP +=
+        devWECC_WP.getAttribute("Name") +
+        ",WECC,Wind_park_parameters,N_wind_turbines," +
+        oDevWECC_WP.Parameters.Ngen +
+        ",\n";
+      data_WP += ",,,Frequency," + oDevWECC_WP.Parameters.Freq + ",Hz\n";
+      data_WP +=
+        ",,,Collector_grid_nominal_voltage," +
+        oDevWECC_WP.Parameters.Vgrid_kVRMSLL +
+        ",kVRMSLL\n";
+      data_WP +=
+        ",,,Tx_grid_nominal_voltage(POI)," +
+        oDevWECC_WP.Parameters.Vpoi_kVRMSLL +
+        ",kVRMSLL\n";
+      data_WP +=
+        ",,,Include_ZigZag_transformer_option," +
+        oDevWECC_WP.Parameters.includeZigZagTransfo +
+        "\n";
+      data_WP +=
+        ",,,R_ZigZag," + oDevWECC_WP.Parameters.ZigZag_R0_ohm + ",Ohm\n";
+      data_WP += ",,,L_ZigZag," + oDevWECC_WP.Parameters.ZigZag_L0_H + ",H\n";
+      data_WP +=
+        ",,Single_wind_turbine,Snom_WP," +
+        oDevWECC_WP.Parameters.Sgen +
+        "," +
+        oDevWECC_WP.Parameters.Sgen_unit +
+        "\n";
+      data_WP +=
+        ",,,Inverter_nominal_voltage," +
+        oDevWECC_WP.Parameters.Vgen_kVRMSLL +
+        ",kVRMSLL\n";
+      data_WP +=
+        ",,,DC_voltage," + oDevWECC_WP.Parameters.Vdc_kV + ",kVRMSLL\n";
+      data_WP +=
+        ",,,Q_filt," +
+        oDevWECC_WP.Parameters.Qfilt +
+        "," +
+        oDevWECC_WP.Parameters.Qfilt_unit +
+        "\n";
+      data_WP += ",,,R_Choke," + oDevWECC_WP.Parameters.Rchoke + ",pu\n";
+      data_WP += ",,,L_Choke," + oDevWECC_WP.Parameters.Lchoke + ",pu\n";
+      data_WP +=
+        ",,Collector_grid,Inc_collector," +
+        oDevWECC_WP.Parameters.includeCollGrid +
+        ",\n";
+      data_WP +=
+        ",,,R_collector," + oDevWECC_WP.Parameters.R_Coll_Grid_Ohm + ",Ohm\n";
+      data_WP +=
+        ",,,L_collector," + oDevWECC_WP.Parameters.L_Coll_Grid_H + ",H\n";
+      data_WP +=
+        ",,,C_collector," + oDevWECC_WP.Parameters.C_Coll_Grid_F + ",F\n";
+      data_WP +=
+        ",,Operating_conditions,N_WT_inServ," +
+        oDevWECC_WP.Parameters.Ngen_in_service +
+        ",\n";
+      data_WP += ",,,Q_ctrlMode," + oDevWECC_WP.Parameters.QC_select + ",\n";
+      data_WP += ",,,Reactive_ref," + oDevWECC_WP.Parameters.Qpoi_pu + ",pu\n";
+      data_WP += ",,,Active_ref," + oDevWECC_WP.Parameters.Pref_poi + ",pu\n";
+    }
+    parseScriptFile("WP_DFIG_m.dwj");
+    var all_WP_DFIG = cct.devices(4, -1, 5, "LibType", "DFIG Wind park");
+    for (var j = 0; j < all_WP_DFIG.length; j++) {
+      var devWP_DFIG = all_WP_DFIG[j];
+      var oDevWP_DFIG = new oDevice_WP_DFIG(devWP_DFIG);
+      data_WP +=
+        devWP_DFIG.getAttribute("Name") +
+        ",DFIG,Wind_park_parameters,N_wind_turbines," +
+        oDevWP_DFIG.Parameters.Ngen +
+        ",\n";
+      data_WP += ",,,Frequency," + oDevWP_DFIG.Parameters.Freq + ",Hz\n";
+      data_WP +=
+        ",,,Collector_grid_nominal_voltage," +
+        oDevWP_DFIG.Parameters.Vgrid_kVRMSLL +
+        ",kVRMSLL\n";
+      data_WP +=
+        ",,,Tx_grid_nominal_voltage(POI)," +
+        oDevWP_DFIG.Parameters.Vpoi_kVRMSLL +
+        ",kVRMSLL\n";
+      data_WP +=
+        ",,,Include_ZigZag_transformer_option," +
+        oDevWP_DFIG.Parameters.includeZigZagTransfo +
+        ",\n";
+      data_WP +=
+        ",,,R_ZigZag," + oDevWP_DFIG.Parameters.ZigZag_R0_ohm + ",Ohm\n";
+      data_WP += ",,,L_ZigZag," + oDevWP_DFIG.Parameters.ZigZag_L0_H + ",H\n";
+      data_WP +=
+        ",,Single_wind_turbine,Snom_WP," +
+        oDevWP_DFIG.Parameters.Sgen +
+        "," +
+        oDevWP_DFIG.Parameters.Sgen_unit +
+        "\n";
+      data_WP +=
+        ",,,P_WP," +
+        oDevWP_DFIG.Parameters.Pgen +
+        "," +
+        oDevWP_DFIG.Parameters.Pgen_unit +
+        "\n";
+      data_WP +=
+        ",,,Q_filt," +
+        oDevWP_DFIG.Parameters.Qfilt +
+        "," +
+        oDevWP_DFIG.Parameters.Qfilt_unit +
+        "\n";
+      data_WP += ",,,R_Choke," + oDevWP_DFIG.Parameters.Rchoke + ",pu\n";
+      data_WP += ",,,L_Choke," + oDevWP_DFIG.Parameters.Lchoke + ",pu\n";
+      data_WP +=
+        ",,Collector_grid,Inc_collector," +
+        oDevWP_DFIG.Parameters.includeCollGrid +
+        ",\n";
+      data_WP +=
+        ",,,R_collector," + oDevWP_DFIG.Parameters.R_Coll_Grid_Ohm + ",Ohm\n";
+      data_WP +=
+        ",,,L_collector," + oDevWP_DFIG.Parameters.L_Coll_Grid_H + ",H\n";
+      data_WP +=
+        ",,,C_collector," + oDevWP_DFIG.Parameters.C_Coll_Grid_F + ",F\n";
+      data_WP +=
+        ",,Operating_conditions,N_WT_inServ," +
+        oDevWP_DFIG.Parameters.Ngen_in_service +
+        ",\n";
+      data_WP += ",,,Q_ctrlMode," + oDevWP_DFIG.Parameters.QC_select + ",\n";
+      data_WP += ",,,Reactive_ref," + oDevWP_DFIG.Parameters.Qpoi_pu + ",pu\n";
+      data_WP +=
+        ",,,Wind_speed," + oDevWP_DFIG.Parameters.Mean_wind_speed + ",\n";
+    }
+    parseScriptFile("WP_FC_m.dwj");
+    var all_WP_FC = cct.devices(4, -1, 5, "LibType", "FC Wind park");
+    for (var k = 0; k < all_WP_FC.length; k++) {
+      var devWP_FC = all_WP_FC[k];
+      var oDevWP_FC = new oDevice_WP_FC(devWP_FC);
+      data_WP +=
+        devWP_FC.getAttribute("Name") +
+        ",FC,Wind_park_parameters,N_wind_turbines," +
+        oDevWP_FC.Parameters.Ngen +
+        ",\n";
+      data_WP += ",,,Frequency," + oDevWP_FC.Parameters.Freq + ",Hz\n";
+      data_WP +=
+        ",,,Collector_grid_nominal_voltage," +
+        oDevWP_FC.Parameters.Vgrid_kVRMSLL +
+        ",kVRMSLL\n";
+      data_WP +=
+        ",,,Tx_grid_nominal_voltage(POI)," +
+        oDevWP_FC.Parameters.Vpoi_kVRMSLL +
+        ",kVRMSLL\n";
+      data_WP +=
+        ",,,Include_ZigZag_transformer_option," +
+        oDevWP_FC.Parameters.includeZigZagTransfo +
+        ",\n";
+      data_WP += ",,,R_ZigZag," + oDevWP_FC.Parameters.ZigZag_R0_ohm + ",Ohm\n";
+      data_WP += ",,,L_ZigZag," + oDevWP_FC.Parameters.ZigZag_L0_H + ",H\n";
+      data_WP +=
+        ",,Single_wind_turbine,Snom_WP," +
+        oDevWP_FC.Parameters.Sgen +
+        "," +
+        oDevWP_FC.Parameters.Sgen_unit +
+        "\n";
+      data_WP +=
+        ",,,P_WP," +
+        oDevWP_FC.Parameters.Pgen +
+        "," +
+        oDevWP_FC.Parameters.Pgen_unit +
+        "\n";
+      data_WP +=
+        ",,,Q_filt," +
+        oDevWP_FC.Parameters.Qfilt +
+        "," +
+        oDevWP_FC.Parameters.Qfilt_unit +
+        "\n";
+      data_WP += ",,,R_Choke," + oDevWP_FC.Parameters.Rchoke + ",pu\n";
+      data_WP += ",,,L_Choke," + oDevWP_FC.Parameters.Lchoke + ",pu\n";
+      data_WP +=
+        ",,Collector_grid,Inc_collector," +
+        oDevWP_FC.Parameters.includeCollGrid +
+        ",\n";
+      data_WP +=
+        ",,,R_collector," + oDevWP_FC.Parameters.R_Coll_Grid_Ohm + ",Ohm\n";
+      data_WP +=
+        ",,,L_collector," + oDevWP_FC.Parameters.L_Coll_Grid_H + ",H\n";
+      data_WP +=
+        ",,,C_collector," + oDevWP_FC.Parameters.C_Coll_Grid_F + ",F\n";
+      data_WP +=
+        ",,Operating_conditions,N_WT_inServ," +
+        oDevWP_FC.Parameters.Ngen_in_service +
+        ",\n";
+      data_WP += ",,,Q_ctrlMode," + oDevWP_FC.Parameters.QC_select + ",\n";
+      data_WP += ",,,Reactive_ref," + oDevWP_FC.Parameters.Qpoi_pu + ",pu\n";
+      data_WP +=
+        ",,,Wind_speed," + oDevWP_FC.Parameters.Mean_wind_speed + ",\n";
+    }
+    return data_WP;
+  } else if (deviceType == "buses" || deviceType == 6) {
+    var all_signals = cct.signals(2048, 6);
+    var data_signals = "Name_buses\n";
+    var regex = /^s\d+$/; // Names that begin with s and are followed by a digit
+    var regex2 = /^(GND|GND\d+)$/; // Expresion like GND or GND + digit
+    var regex3 = /\S/; //checks if the signal name contains any non-whitespace characters
+    for (var i = 0; i < all_signals.length; i++) {
+      var signal = all_signals[i];
+      var signalName = signal.getAttribute("Name");
+      var condition =
+        !regex.test(signalName) &&
+        !regex2.test(signalName) &&
+        regex3.test(signalName);
+      if (condition) {
+        data_signals += signalName + "\n";
+      }
+    }
+    return data_signals;
+  } else if (deviceType == "lfToSG" || deviceType == 7) {
+    parseScriptFile("machine_sm_m.dwj");
+    parseScriptFile("load_flow_bus_m.dwj");
+    var all_SG = cct.devices(4, -1, 5, "LibType", "synchronous machine");
+    var data_lfToSG = "Name_of_LF,Parameter,Value,Unit,AssociateSG\n";
+    for (var i = 0; i < all_SG.length; i++) {
+      var devSG = all_SG[i]; // take every element in the array of all_SG
+      var oDevSG = new oDevice_SM(devSG);
+      var cct2 = devSG.circuit; // take the elements in the page of the SG
+      var devLF = cct2.devices("LibType", "Load-Flow Bus"); //select the LF in the page
+      var oDevLF = new oDevice_Load_flow_bus(devLF[0]); // open the LF device
+      // LF bus data
+      data_lfToSG +=
+        devLF[0].getAttribute("Name") +
+        ",BusType," +
+        oDevLF.Bus_Type +
+        ",," +
+        devSG.getAttribute("Name") +
+        "\n";
+      data_lfToSG +=
+        ",Voltage," +
+        oDevLF.Voltage_Slack +
+        "," +
+        oDevLF.Voltage_Slack_units +
+        ",\n";
+      data_lfToSG += ",P," + oDevLF.P_set + "," + oDevLF.P_set_units + ",\n";
+      data_lfToSG += ",Qset," + oDevLF.Q_set + "," + oDevLF.Q_set_units + ",\n";
+      data_lfToSG += ",Qmax," + oDevLF.Q_max + "," + oDevLF.Q_max_units + ",\n";
+      data_lfToSG += ",Qmin," + oDevLF.Q_min + "," + oDevLF.Q_min_units + ",\n";
+    }
+    return data_lfToSG;
+  } else if (deviceType == "tfToSG" || deviceType == 8) {
+    parseScriptFile("machine_sm_m.dwj");
+    parseScriptFile("trs3_m.dwj");
+    var all_SG = cct.devices(4, -1, 5, "LibType", "synchronous machine");
+    // export data of the TF associate to every SG
+    var data_tfToSG = "Name_of_TF,Parameter,Value,Unit,AssociateSG\n";
+    for (var i = 0; i < all_SG.length; i++) {
+      var devSG = all_SG[i]; // take every element in the array of all_SG
+      var oDevSG = new oDevice_SM(devSG);
+      var cct2 = devSG.circuit; // take the elements in the page of the SG
+      var devTF = cct2.devices("LibName", "transformers.clf"); //select the TF in the page
+      var oDevTF = new oDevice_yy(devTF[0]); //open the TF in the page
+      // Tf data
+      data_tfToSG +=
+        devTF[0].getAttribute("Name") +
+        ",S," +
+        oDevTF.S +
+        ",MVA," +
+        devSG.getAttribute("Name") +
+        "\n";
+      data_tfToSG += ",f," + oDevTF.f + ",Hz" + ",\n";
+      data_tfToSG += ",Winding_1," + oDevTF.V1 + ",kV_RMSLL" + ",\n";
+      data_tfToSG += ",Winding_2," + oDevTF.V2 + ",kV_RMSLL" + ",\n";
+      data_tfToSG += ",Tap_ratio," + oDevTF.tap_ratio + ",,\n";
+      data_tfToSG += ",Winding_R," + oDevTF.R1 + "," + oDevTF.R1units + ",\n";
+      data_tfToSG += ",Winding_X," + oDevTF.X1 + "," + oDevTF.X1units + ",\n";
+      data_tfToSG += ",Winding_impedance_on_winding_1," + oDevTF.DW + ",,\n";
+      // data_tfToSG += ",Winding_checkbox," + oDevTF.DWcheckb + ",,\n"; // 1 for check, 0 non.
+    }
+    return data_tfToSG;
+  } else if (deviceType == "allToSG" || deviceType == 9) {
+    parseScriptFile("load_flow_bus_m.dwj");
+    parseScriptFile("machine_sm_m.dwj");
+    parseScriptFile("trs3_m.dwj");
+    var all_SG = cct.devices(4, -1, 5, "LibType", "synchronous machine");
+    var all_LF = cct.devices(4, -1, 5, "LibType", "Load-Flow Bus");
+    var all_TF = cct.devices(4, -1, 5, "LibName", "transformers.clf");
+    // export data of SG and the elements LF and TF associate
+    var data_allToSG =
+      "Name_of_SG,Type_of_data,Parameter,Value,Unit_SG,Name_of_LF,Parameter,Value,Unit_LF,Name_of_TF,Parameter,Value,Unit_TF\n";
+    for (var i = 0; i < all_SG.length; i++) {
+      var devSG = all_SG[i]; // take every element in the array of all_SG
+      var oDevSG = new oDevice_SM(devSG);
+      var cct2 = devSG.circuit; // take the elements in the page of the SG
+      var devLF = cct2.devices("LibType", "Load-Flow Bus"); //select the LF in the page
+      var oDevLF = new oDevice_Load_flow_bus(devLF[0]); // open the LF device
+      var devTF = cct2.devices("LibName", "transformers.clf"); //select the TF in the page
+      var oDevTF = new oDevice_yy(devTF[0]); //open the TF in the page
+      // SG data
+      data_allToSG +=
+        devSG.getAttribute("Name") +
+        ",Electrical_data,V_a," +
+        oDevSG.Voltage_a +
+        "," +
+        oDevSG.Voltage_units +
+        "," +
+        devLF[0].getAttribute("Name") +
+        ",BusType," +
+        oDevLF.Bus_Type +
+        ",," +
+        devTF[0].getAttribute("Name") +
+        ",S," +
+        oDevTF.S +
+        ",MVA\n";
+      data_allToSG +=
+        ",,V_b," +
+        oDevSG.Voltage_b +
+        "," +
+        oDevSG.Voltage_units +
+        ",,Voltage," +
+        oDevLF.Voltage_Slack +
+        "," +
+        oDevLF.Voltage_Slack_units +
+        ",,f," +
+        oDevTF.f +
+        ",Hz" +
+        ",\n";
+      data_allToSG +=
+        ",,V_c," +
+        oDevSG.Voltage_c +
+        "," +
+        oDevSG.Voltage_units +
+        ",,P," +
+        oDevLF.P_set +
+        "," +
+        oDevLF.P_set_units +
+        ",,Winding_1," +
+        oDevTF.V1 +
+        ",kV_RMSLL" +
+        ",\n";
+      data_allToSG +=
+        ",,Rated_voltage_(Y-connection)," +
+        oDevSG.Rating_V +
+        ",kVRMSLL" +
+        ",,Qset," +
+        oDevLF.Q_set +
+        "," +
+        oDevLF.Q_set_units +
+        ",,Winding_2," +
+        oDevTF.V2 +
+        ",kV_RMSLL" +
+        ",\n";
+      data_allToSG +=
+        ",,Rated_power," +
+        oDevSG.Rating_S +
+        ",MVA" +
+        ",,Qmax," +
+        oDevLF.Q_max +
+        "," +
+        oDevLF.Q_max_units +
+        ",,Tap_ratio," +
+        oDevTF.tap_ratio +
+        ",,\n";
+      data_allToSG +=
+        ",,R_a," +
+        oDevSG.Ra +
+        ",pu" +
+        ",,Qmin," +
+        oDevLF.Q_min +
+        "," +
+        oDevLF.Q_min_units +
+        ",,Winding_R," +
+        oDevTF.R1 +
+        "," +
+        oDevTF.R1units +
+        ",\n";
+      data_allToSG +=
+        ",,X_l," +
+        oDevSG.Xl +
+        ",pu" +
+        ",,Winding_X," +
+        oDevTF.X1 +
+        "," +
+        oDevTF.X1units +
+        ",,,,,\n";
+      data_allToSG +=
+        ",,X_0," +
+        oDevSG.X0 +
+        ",pu" +
+        ",,Winding_impedance_on_winding_1," +
+        oDevTF.DW +
+        ",,,,,,\n";
+      data_allToSG += ",,X_d," + oDevSG.Xd + ",pu" + "\n";
+      data_allToSG += ",,X_q," + oDevSG.Xq + ",pu" + "\n";
+      data_allToSG += ",,X_dp," + oDevSG.Xdp + ",pu" + "\n";
+      data_allToSG += ",,X_dpp," + oDevSG.Xdpp + ",pu" + "\n";
+      data_allToSG += ",,T_dp," + oDevSG.Tdp + ",s" + "\n";
+      data_allToSG += ",,T_dpp," + oDevSG.Tdpp + ",s" + "\n";
+      data_allToSG += ",,X_qp," + oDevSG.Xqp + ",pu" + "\n";
+      data_allToSG += ",,X_qpp," + oDevSG.Xqpp + ",pu" + "\n";
+      data_allToSG += ",,T_qp," + oDevSG.Tqp + ",s" + "\n";
+      data_allToSG += ",,T_qpp," + oDevSG.Tqpp + ",s" + "\n";
+      var H = oDevSG.Mass_data.split(" ");
+      data_allToSG += ",Mechanical_data,H," + H[1] + ",kgm^2/rad" + "\n";
+    }
+    return data_allToSG;
+  } else if (deviceType == "LF" || deviceType == 10) {
+    parseScriptFile("load_flow_bus_m.dwj");
+    var all_LF = cct.devices(4, -1, 6, "LibType", "Load-Flow Bus");
+    var data_LF = "Name_of_LF,Parameter,Value,Unit\n";
+    for (var i = 0; i < all_LF.length; i++) {
+      var devLF = all_LF[i];
+      var oDevLF = new oDevice_Load_flow_bus(devLF);
+      // LF bus data
+      data_LF +=
+        devLF.getAttribute("Name") + ",BusType," + oDevLF.Bus_Type + ",\n";
+      data_LF +=
+        ",Voltage," +
+        oDevLF.Voltage_Slack +
+        "," +
+        oDevLF.Voltage_Slack_units +
+        "\n";
+      data_LF += ",P," + oDevLF.P_set + "," + oDevLF.P_set_units + "\n";
+      data_LF += ",Qset," + oDevLF.Q_set + "," + oDevLF.Q_set_units + "\n";
+      data_LF += ",Qmax," + oDevLF.Q_max + "," + oDevLF.Q_max_units + "\n";
+      data_LF += ",Qmin," + oDevLF.Q_min + "," + oDevLF.Q_min_units + "\n";
+    }
+    return data_LF;
+  }
+}
+
+function ucData(pathData, deviceType) {
+  /**
+   ** Obtain commitment state of the selected device type.
+   * @param {string} pathData - Path where the data is saved.
+   * @param {object} deviceType
+   * - "all" (default) => all: .
+   * - 0 => PV: PV parks
+   * - 1 => SG: Synchronous Generators.
+   * - 5 => WP: Wind Parks.
+   * - 11=> Converter: Converters (reactive compensation).
+   */
+  //*Sanity check, if dont put deviceType means "all"
+  if (deviceType === undefined) {
+    deviceType = "all";
+  }
+  var dev, LibType, cct_2, name_1, status_1, status_final;
+
+  // Initialize the string to fill with the information
+  var uc_pv = "Name1,Name2,Type_Park,Status1,Status2,StatusFinal\n";
+  var uc_wp = "Name1,Name2,Type_Park,Status1,Status2,StatusFinal\n";
+  var uc_sg = "Name1,Name2,Name3,Status1,Status2,Status3,StatusFinal\n";
+  var uc_converter = "Name1,LibType,Status1,StatusFinal\n";
+
+  var all_non_excl_devs = cct.devices(4, -1, 6, "Exclude", ""); // included devices
+  // first loop search in the top level
+  for (var ii = 0; ii < all_non_excl_devs.length; ii++) {
+    //*********** LEVEL 1 */
+    dev = all_non_excl_devs[ii];
+    LibType = dev.getAttribute("LibType");
+    name_1 = dev.getAttribute("Name");
+    status_1 = "1";
+    // search in the object without an associated script
+    if (dev.getAttribute("Script.Open.Dev") == "") {
+      cct_2 = dev.subCircuit(); // get subcircuit
+      //*********** LEVEL 2 */
+      //  ***************INCLUDED DEVICES
+      var all_non_excl_devs_2 = cct_2.devices(4, -1, 4, "Exclude", ""); // non excluded devices
+      var dev_2, LibType_2, cct_3, name_2, status_2;
+      // search in second level
+      for (var jj = 0; jj < all_non_excl_devs_2.length; jj++) {
+        dev_2 = all_non_excl_devs_2[jj];
+        LibType_2 = dev_2.getAttribute("LibType");
+        name_2 = dev_2.getAttribute("Name");
+        status_2 = "1"; // porque estoy en non_excl
+        // si es que es otro elemento vacío entonces entro
+        if (dev_2.getAttribute("Script.Open.Dev") == "") {
+          cct_3 = dev_2.subCircuit();
+          //*********** LEVEL 3 */
+          var all_non_excl_devs_3 = cct_3.devices(4, -1, 4, "Exclude", ""); // non excluded devices
+          var dev_3, LibType_3, name_3, status_3;
+          for (var kk = 0; kk < all_non_excl_devs_3.length; kk++) {
+            dev_3 = all_non_excl_devs_3[kk];
+            LibType_3 = dev_3.getAttribute("LibType");
+            name_3 = dev_3.getAttribute("Name");
+            status_3 = "1";
+            if (LibType_3 == "synchronous machine") {
+              status_final =
+                status_1 === "1" && status_2 === "1" && status_3 === "1"
+                  ? "1"
+                  : "0";
+              uc_sg +=
+                name_1 +
+                "," +
+                name_2 +
+                "," +
+                name_3 +
+                "," +
+                status_1 +
+                "," +
+                status_2 +
+                "," +
+                status_3 +
+                "," +
+                status_final +
+                "\n";
+            }
+          }
+          var all_excl_devs_3 = cct_3.devices(4, -1, 4, "Exclude", "Ex"); //excluded devices
+          for (var kk = 0; kk < all_excl_devs_3.length; kk++) {
+            dev_3 = all_excl_devs_3[kk];
+            LibType_3 = dev_3.getAttribute("LibType");
+            name_3 = dev_3.getAttribute("Name");
+            status_3 = "0";
+            if (LibType_3 == "synchronous machine") {
+              status_final =
+                status_1 === "1" && status_2 === "1" && status_3 === "1"
+                  ? "1"
+                  : "0";
+              uc_sg +=
+                name_1 +
+                "," +
+                name_2 +
+                "," +
+                name_3 +
+                "," +
+                status_1 +
+                "," +
+                status_2 +
+                "," +
+                status_3 +
+                "," +
+                status_final +
+                "\n";
+            }
+          }
+          continue; // si es que encontró entonces paso al siguiente
+        }
+
+        // If Script open dev is not empty, check the cases
+        switch (LibType_2) {
+          case "WECC PV park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_pv +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "PV park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_pv +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "WECC WP":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "WECC Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "DFIG Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "FC Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+        }
+      }
+      // ****************EXCLUDED DEVICES
+      var all_excl_devs_2 = cct_2.devices(4, -1, 4, "Exclude", "Ex"); //excluded devices
+      for (var jj = 0; jj < all_excl_devs_2.length; jj++) {
+        dev_2 = all_excl_devs_2[jj];
+        LibType_2 = dev_2.getAttribute("LibType");
+        name_2 = dev_2.getAttribute("Name");
+        status_2 = "0"; // porque estoy en excl
+        // si es que es otro elemento vacío entonces entro de nuevo
+        if (dev_2.getAttribute("Script.Open.Dev") == "") {
+          cct_3 = dev_2.subCircuit();
+          var all_non_excl_devs_3 = cct_3.devices(4, -1, 4, "Exclude", ""); // non excluded devices
+          var dev_3, LibType_3, name_3, status_3;
+          for (var kk = 0; kk < all_non_excl_devs_3.length; kk++) {
+            dev_3 = all_non_excl_devs_3[kk];
+            LibType = dev_3.getAttribute("LibType");
+            name_3 = dev_3.getAttribute("Name");
+            status_3 = "1";
+            if (LibType == "synchronous machine") {
+              status_final =
+                status_1 === "1" && status_2 === "1" && status_3 === "1"
+                  ? "1"
+                  : "0";
+              uc_sg +=
+                name_1 +
+                "," +
+                name_2 +
+                "," +
+                name_3 +
+                "," +
+                status_1 +
+                "," +
+                status_2 +
+                "," +
+                status_3 +
+                "," +
+                status_final +
+                "\n";
+            }
+          }
+          var all_excl_devs_3 = cct_3.devices(4, -1, 4, "Exclude", "Ex"); //excluded devices
+          for (var kk = 0; kk < all_excl_devs_3.length; kk++) {
+            dev_3 = all_excl_devs_3[kk];
+            LibType = dev_3.getAttribute("LibType");
+            name_3 = dev_3.getAttribute("Name");
+            status_3 = "0";
+            if (LibType == "synchronous machine") {
+              status_final =
+                status_1 === "1" && status_2 === "1" && status_3 === "1"
+                  ? "1"
+                  : "0";
+              uc_sg +=
+                name_1 +
+                "," +
+                name_2 +
+                "," +
+                name_3 +
+                "," +
+                status_1 +
+                "," +
+                status_2 +
+                "," +
+                status_3 +
+                "," +
+                status_final +
+                "\n";
+            }
+          }
+        }
+        switch (LibType_2) {
+          case "WECC PV park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_pv +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "PV park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_pv +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "WECC WP":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "DFIG Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "FC Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+        }
+      }
+      continue;
+    }
+    // If Script open dev is not empty, check the cases
+    switch (LibType) {
+      case "WECC PV park":
+        uc_pv +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "PV park":
+        uc_pv +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "WECC WP":
+        uc_wp +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+
+      case "WECC Wind park":
+        uc_wp +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "DFIG Wind park":
+        uc_wp +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "FC Wind park":
+        uc_wp +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "AC-DC converter with control":
+        uc_converter +=
+          name_1 +
+          "," +
+          LibType +
+          "," +
+          status_1 +
+          "," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "STATCOM":
+        uc_converter +=
+          name_1 +
+          "," +
+          LibType +
+          "," +
+          status_1 +
+          "," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+    }
+  }
+
+  var all_excl_devs = cct.devices(4, -1, 6, "Exclude", "Ex"); //excluded devices
+  // first loop search in the top level
+  for (var ii = 0; ii < all_excl_devs.length; ii++) {
+    //*********** LEVEL 1 */
+    dev = all_excl_devs[ii];
+    LibType = dev.getAttribute("LibType");
+    name_1 = dev.getAttribute("Name");
+    status_1 = "0";
+    // search in the object without an associated script
+    if (dev.getAttribute("Script.Open.Dev") == "") {
+      cct_2 = dev.subCircuit(); // get subcircuit
+      //*********** LEVEL 2 */
+      //  ***************INCLUDED DEVICES
+      var all_non_excl_devs_2 = cct_2.devices(4, -1, 4, "Exclude", ""); // non excluded devices
+      var dev_2, LibType_2, cct_3, name_2, status_2;
+      // search in second level
+      for (var jj = 0; jj < all_non_excl_devs_2.length; jj++) {
+        dev_2 = all_non_excl_devs_2[jj];
+        LibType_2 = dev_2.getAttribute("LibType");
+        name_2 = dev_2.getAttribute("Name");
+        status_2 = "1"; // porque estoy en non_excl
+        // si es que es otro elemento vacío entonces entro
+        if (dev_2.getAttribute("Script.Open.Dev") == "") {
+          cct_3 = dev_2.subCircuit();
+          //*********** LEVEL 3 */
+          var all_non_excl_devs_3 = cct_3.devices(4, -1, 4, "Exclude", ""); // non excluded devices
+          var dev_3, LibType_3, name_3, status_3;
+          for (var kk = 0; kk < all_non_excl_devs_3.length; kk++) {
+            dev_3 = all_non_excl_devs_3[kk];
+            LibType_3 = dev_3.getAttribute("LibType");
+            name_3 = dev_3.getAttribute("Name");
+            status_3 = "1";
+            if (LibType_3 == "synchronous machine") {
+              status_final =
+                status_1 === "1" && status_2 === "1" && status_3 === "1"
+                  ? "1"
+                  : "0";
+              uc_sg +=
+                name_1 +
+                "," +
+                name_2 +
+                "," +
+                name_3 +
+                "," +
+                status_1 +
+                "," +
+                status_2 +
+                "," +
+                status_3 +
+                "," +
+                status_final +
+                "\n";
+            }
+          }
+          var all_excl_devs_3 = cct_3.devices(4, -1, 4, "Exclude", "Ex"); //excluded devices
+          for (var kk = 0; kk < all_excl_devs_3.length; kk++) {
+            dev_3 = all_excl_devs_3[kk];
+            LibType_3 = dev_3.getAttribute("LibType");
+            name_3 = dev_3.getAttribute("Name");
+            status_3 = "0";
+            if (LibType_3 == "synchronous machine") {
+              status_final =
+                status_1 === "1" && status_2 === "1" && status_3 === "1"
+                  ? "1"
+                  : "0";
+              uc_sg +=
+                name_1 +
+                "," +
+                name_2 +
+                "," +
+                name_3 +
+                "," +
+                status_1 +
+                "," +
+                status_2 +
+                "," +
+                status_3 +
+                "," +
+                status_final +
+                "\n";
+            }
+          }
+          continue; // si es que encontró entonces paso al siguiente
+        }
+
+        // If Script open dev is not empty, check the cases
+        switch (LibType_2) {
+          case "WECC PV park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_pv +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "PV park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_pv +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "WECC WP":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "WECC Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "DFIG Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "FC Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+        }
+      }
+      // ****************EXCLUDED DEVICES
+      var all_excl_devs_2 = cct_2.devices(4, -1, 4, "Exclude", "Ex"); //excluded devices
+      for (var jj = 0; jj < all_excl_devs_2.length; jj++) {
+        dev_2 = all_excl_devs_2[jj];
+        LibType_2 = dev_2.getAttribute("LibType");
+        name_2 = dev_2.getAttribute("Name");
+        status_2 = "0"; // porque estoy en excl
+        // si es que es otro elemento vacío entonces entro de nuevo
+        if (dev_2.getAttribute("Script.Open.Dev") == "") {
+          cct_3 = dev_2.subCircuit();
+          var all_non_excl_devs_3 = cct_3.devices(4, -1, 4, "Exclude", ""); // non excluded devices
+          var dev_3, LibType_3, name_3, status_3;
+          for (var kk = 0; kk < all_non_excl_devs_3.length; kk++) {
+            dev_3 = all_non_excl_devs_3[kk];
+            LibType = dev_3.getAttribute("LibType");
+            name_3 = dev_3.getAttribute("Name");
+            status_3 = "1";
+            if (LibType == "synchronous machine") {
+              status_final =
+                status_1 === "1" && status_2 === "1" && status_3 === "1"
+                  ? "1"
+                  : "0";
+              uc_sg +=
+                name_1 +
+                "," +
+                name_2 +
+                "," +
+                name_3 +
+                "," +
+                status_1 +
+                "," +
+                status_2 +
+                "," +
+                status_3 +
+                "," +
+                status_final +
+                "\n";
+            }
+          }
+          var all_excl_devs_3 = cct_3.devices(4, -1, 4, "Exclude", "Ex"); //excluded devices
+          for (var kk = 0; kk < all_excl_devs_3.length; kk++) {
+            dev_3 = all_excl_devs_3[kk];
+            LibType = dev_3.getAttribute("LibType");
+            name_3 = dev_3.getAttribute("Name");
+            status_3 = "0";
+            if (LibType == "synchronous machine") {
+              status_final =
+                status_1 === "1" && status_2 === "1" && status_3 === "1"
+                  ? "1"
+                  : "0";
+              uc_sg +=
+                name_1 +
+                "," +
+                name_2 +
+                "," +
+                name_3 +
+                "," +
+                status_1 +
+                "," +
+                status_2 +
+                "," +
+                status_3 +
+                "," +
+                status_final +
+                "\n";
+            }
+          }
+        }
+        switch (LibType_2) {
+          case "WECC PV park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_pv +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "PV park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_pv +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "WECC WP":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "WECC Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "DFIG Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+          case "FC Wind park":
+            status_final = status_1 === "1" && status_2 === "1" ? "1" : "0";
+            uc_wp +=
+              name_1 +
+              "," +
+              name_2 +
+              "," +
+              LibType_2 +
+              "," +
+              status_1 +
+              "," +
+              status_2 +
+              "," +
+              status_final +
+              "\n";
+            break;
+        }
+      }
+      continue;
+    }
+    // If Script open dev is not empty, check the cases
+    switch (LibType) {
+      case "WECC PV park":
+        uc_pv +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "PV park":
+        uc_pv +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "WECC WP":
+        uc_wp +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "WECC Wind park":
+        uc_wp +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "DFIG Wind park":
+        uc_wp +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "FC Wind park":
+        uc_wp +=
+          name_1 +
+          ",-," +
+          LibType +
+          "," +
+          status_1 +
+          ",-," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "AC-DC converter with control":
+        uc_converter +=
+          name_1 +
+          "," +
+          LibType +
+          "," +
+          status_1 +
+          "," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+      case "STATCOM":
+        uc_converter +=
+          name_1 +
+          "," +
+          LibType +
+          "," +
+          status_1 +
+          "," +
+          status_1 + // ahora status 1 = status final
+          "\n";
+        break;
+    }
+  }
+
+  switch (deviceType) {
+    case "all":
+      outputFile(uc_sg, "uc_sg_", pathData);
+      outputFile(uc_pv, "uc_pv_", pathData);
+      outputFile(uc_wp, "uc_wp_", pathData);
+      outputFile(uc_converter, "uc_converter_", pathData);
+      break;
+    case "PV":
+    case 0:
+      outputFile(uc_pv, "uc_pv_", pathData);
+      break;
+    case "SG":
+    case 1:
+      outputFile(uc_sg, "uc_sg_", pathData);
+      break;
+    case "WP":
+    case 5:
+      outputFile(uc_wp, "uc_wp_", pathData);
+      break;
+  }
+}
+
+function outputFile(data, namePrefix, exportPath, typeOutputFile) {
+  /**
+   ** Changes the data as specified.
+   * @param {string} data - Names of the devices.
+   * @param {string} typeOutputFile - Type can be "csv" or "txt", csv by default.
+   * @param {string} namePrefix - Its the prefix previous the name of file
+   * by default the name begin with the name of the design (.ecf).
+   * @param {string} exportPath - Optional parameter to specify the export path,
+   * by default its the same of the design.
+   */
+  //
+  // Sanity check for the path
+  if (!exportPath) {
+    exportPath = cct.getAttribute("CctPath");
+  }
+
+  if (exportPath && exportPath.slice(-1) !== "\\") {
+    exportPath += "\\";
+  }
+  // code
+  if (typeOutputFile == "txt" || typeOutputFile == 0) {
+    var filename =
+      (exportPath || cct.getAttribute("CctPath")) +
+      namePrefix +
+      cct.getAttribute("CctName").slice(0, -3) +
+      "txt";
+  } else {
+    var filename =
+      (exportPath || cct.getAttribute("CctPath")) +
+      namePrefix +
+      cct.getAttribute("CctName").slice(0, -3) +
+      "csv";
+  }
+  var output_file = SPFile(filename);
+  output_file.create();
+  output_file.write(data);
+  output_file.close();
+}
+
+function changeData(Names, Parameters, Values, deviceType) {
+  /**
+   ** Changes the data as specified.
+   * @param {object} Names - Names of the devices.
+   * @param {object} Parameters - It's especify in every loop.
+   * @param {object} Values - Values to replace.
+   * @param {number} deviceType
+   * - 0 => PV: PV parks.
+   * - 1 => SG: Synchronous Generators.
+   * - 2 => loadLF: loads with a lf, only for the firs layer.
+   * - 22 => loadLF: loads with a lf, only for the firs layer, old format.
+   * - 3 => lines: lines transmissions with CP model.
+   * - 4 => TF: transformers.
+   * - 5 => WP: Wind Parks.
+   * - 6 => buses: names of the buses (only on top level).
+   * - 7 => lfToSG: lf devices associated to every SG.
+   * - 8 => tfToSG: tf devices associated to every SG.
+   * - 9 => allToSG: lf and tf devices associated to every SG.
+   * - 10 => LF: all the LF devices in the circuit.
+   */
+  //
+  if (deviceType == "PV" || deviceType == 0) {
+    /**
+     ** Parameters - Must be writing equal to the name below.
+     * @param {string} N_PV_arrays - Number of PV arrays.
+     * @param {string or number} N_PV_inServ: Number of PV arrays in service.
+     * @param {string or number} Q_ctrlMode: Q-control mode: Q,V or PF.
+     * @param {string or number} Reactive_ref: Reactive power reference in pu.
+     * @param {string or number} P_ctrlMode: P-control mode: MPPT or Power Control.
+     * @param {string or number} Active_ref: Active power reference in pu.
+     */
+    parseScriptFile("WECC_PVPark_m.dwj");
+    var all_WECC_PV = cct.devices(4, -1, 5, "LibType", "WECC PV park");
+    parseScriptFile("PVPark_m.dwj");
+    var all_std_PV = cct.devices(4, -1, 5, "LibType", "PV park");
+    // Primer caso para cuando hay que cambiar todos los elementos
+    // util para los scopes y observe
+    if (Names == "all") {
+      //*Recorro los PV WECC
+      for (var i = 0; i < all_WECC_PV.length; i++) {
+        var devWECC = all_WECC_PV[i];
+        var oDevWECC_PV = new oDevice_WECC_PV(devWECC);
+        var parameters_map = {
+          "Power": ["SCOPE_Park_P", "SCOPE_Park_Q"],
+          "P": ["SCOPE_Park_P"],
+          "Q": ["SCOPE_Park_Q"],
+          "Id": ["SCOPE_Id"],
+          "Iq": ["SCOPE_Iq"],
+          "PLL_freq": ["SCOPE_PLL_freq"]
+        };
+
+        for (var k = 0; k < Parameters.length; k++) {
+          var param = Parameters[k];
+          var value = Values[k] == "on" ? "1" : "0";
+
+          if (parameters_map[param]) {
+            for (var j = 0; j < parameters_map[param].length; j++) {
+              var property = parameters_map[param][j];
+              oDevWECC_PV.Parameters[property] = value;
+            }
+          }
+        }
+        oDevWECC_PV.SaveData();
+      }
+      for (var i = 0; i < all_std_PV.length; i++) {
+        var devStdPV = all_std_PV[i];
+        var oDevStd_PV = new oDevice_PV(devStdPV);
+        var parameters_map = {
+          "Power": ["SCOPE_Park_P", "SCOPE_Park_Q"],
+          "P": ["SCOPE_Park_P"],
+          "Q": ["SCOPE_Park_Q"],
+          "Id": ["SCOPE_Id"],
+          "Iq": ["SCOPE_Iq"],
+          "PLL_freq": ["SCOPE_PLL_freq"]
+        };
+
+        for (var k = 0; k < Parameters.length; k++) {
+          var param = Parameters[k];
+          var value = Values[k] == "on" ? "1" : "0"; //on or off condition
+
+          if (parameters_map[param]) {
+            for (var j = 0; j < parameters_map[param].length; j++) {
+              var property = parameters_map[param][j];
+              oDevStd_PV.Parameters[property] = value;
+            }
+          }
+        }
+        oDevStd_PV.SaveData();
+      }
+    } else {
+      //* Caso para modificar parametros
+      writeln(
+        "############################################################################"
+      );
+      writeln("Begin to change the parameters of the PV devices\n");
+      var count = 0;
+      // * Recorro todos los nombres que quiero cambiar
+      for (var i = 0; i < Names.length; i++) {
+        //* Recorro todos los WECC del circuito
+        for (var j = 0; j < all_WECC_PV.length; j++) {
+          var devWECC = all_WECC_PV[j];
+          // * Si encuentra el nombre entonces comienzo a hacer los cambios
+          if (devWECC.getAttribute("Name") == Names[i]) {
+            var oDevWECC_PV = new oDevice_WECC_PV(devWECC);
+            // * voy a buscar el nombre de cada parametro
+            for (var k = 0; k < Parameters.length; k++) {
+              if (Parameters[k] == "N_PV_arrays") {
+                // * El valor que busco esta en el indice del nombre y en la posicion del parametro
+                oDevWECC_PV.Parameters.Ngen = String(Values[i][k]);
+              } else if (Parameters[k] == "N_PV_inServ") {
+                oDevWECC_PV.Parameters.Ngen_in_service = String(Values[i][k]);
+              } else if (Parameters[k] == "Q_ctrlMode") {
+                oDevWECC_PV.Parameters.QC_select = String(Values[i][k]);
+              } else if (Parameters[k] == "Reactive_ref") {
+                oDevWECC_PV.Parameters.Qpoi_pu = String(Values[i][k]);
+              } else if (Parameters[k] == "P_ctrlMode") {
+                oDevWECC_PV.Parameters.PC_select = String(Values[i][k]);
+              } else if (Parameters[k] == "Active_ref") {
+                oDevWECC_PV.Parameters.Pref_poi = String(Values[i][k]);
+              }
+            }
+            oDevWECC_PV.SaveData();
+            writeln(devWECC.getAttribute("Name") + "PV device modified");
+            count += 1;
+            break;
+          }
+        }
+        for (var j = 0; j < all_std_PV.length; j++) {
+          var devStdPV = all_std_PV[j];
+          // * Si encuentra el nombre entonces comienzo a hacer los cambios
+          if (devStdPV.getAttribute("Name") == Names[i]) {
+            var oDevStd_PV = new oDevice_PV(devStdPV);
+            // * voy a buscar el nombre de cada parametro
+            for (var k = 0; k < Parameters.length; k++) {
+              if (Parameters[k] == "N_PV_arrays") {
+                // * El valor que busco esta en el indice del nombre y en la posicion del parametro
+                oDevStd_PV.Parameters.Ngen = String(Values[i][k]);
+              } else if (Parameters[k] == "N_PV_inServ") {
+                oDevStd_PV.Parameters.Ngen_in_service = String(Values[i][k]);
+              } else if (Parameters[k] == "Q_ctrlMode") {
+                oDevStd_PV.Parameters.QC_select = String(Values[i][k]);
+              } else if (Parameters[k] == "Reactive_ref") {
+                oDevStd_PV.Parameters.Qpoi_pu = String(Values[i][k]);
+              } else if (Parameters[k] == "P_ctrlMode") {
+                oDevStd_PV.Parameters.PC_select = String(Values[i][k]);
+              } else if (Parameters[k] == "Active_ref") {
+                oDevStd_PV.Parameters.Pref_poi = String(Values[i][k]);
+              }
+            }
+            oDevStd_PV.SaveData();
+            writeln(devStdPV.getAttribute("Name") + "PV device modified");
+            count += 1;
+            break;
+          }
+        }
+      }
+      writeln("\n" + count + "PV devices were modified");
+      writeln("Changes in parameters of the PV Bus devices were completed");
+      writeln(
+        "############################################################################"
+      );
+    }
+  } else if (deviceType == "SG" || deviceType == 1) {
+    parseScriptFile("machine_sm_m.dwj");
+    var all_SG1 = cct.devices(4, -1, 5, "LibType", "synchronous machine");
+    var all_SG2 = cct.devices(4, -1, 5, "LibType", "Synchronous");
+    // Concatenar ambos resultados en un solo array
+
+    // Crear un nuevo array vacío
+    var all_SG = [];
+    // Agregar elementos de all_SG1
+    for (var i = 0; i < all_SG1.length; i++) {
+      all_SG.push(all_SG1[i]);
+    }
+
+    // Agregar elementos de all_SG2
+    for (var j = 0; j < all_SG2.length; j++) {
+      all_SG.push(all_SG2[j]);
+    }
+
+    // Primer caso para cuando hay que cambiar todos los elementos
+    // util para los scopes y observe
+    if (Names == "all") {
+      for (var i = 0; i < all_SG.length; i++) {
+        var devSG = all_SG[i];
+        var oDevSG = new oDevice_SM(devSG);
+        for (var k = 0; k < Parameters.length; k++) {
+          //TODO VER QUE DIFERENCIA TIENE EL OBSERVE CON EL SCOPE
+          if (Parameters[k] == "PowerAngle") {
+            // Para prender Observe "2", el scope "1"
+            if (Values[k] == "on") {
+              oDevSG.PowerAng_s = "1";
+              oDevSG.PowerAng_o = "2";
+            } else if (Values[k] == "off") {
+              oDevSG.PowerAng_s = "0";
+              oDevSG.PowerAng_o = "0";
+            }
+          }
+          oDevSG.SaveData();
+          if (Parameters[k] == "theta_angle") {
+            if (Values[k] == "on") {
+              var model_data = devSG.getAttribute("ModelData");
+              var TMPArray = SPArray();
+              TMPArray.splitParams(model_data);
+              new_model_data = "";
+              attribute_to_modify = 0;
+              for (var j = 0; j < TMPArray.length - 1; j++) {
+                TMPArray1 = TMPArray[j].split("MSu");
+                if (TMPArray[j].length != TMPArray1[0].length) {
+                  attribute_to_modify = j;
+                }
+              }
+              if (attribute_to_modify != 0) {
+                TMPArray2 = TMPArray[attribute_to_modify].split("\n");
+                // TMPArray2[0] = "1 4 0 0 0 6780"
+                TMPArray2[1] = "2 3 0 0 0";
+                TMPArray2[2] = "MSu=1 1 1";
+                TMPArray[attribute_to_modify] =
+                  TMPArray2[0] + "\n" + TMPArray2[1] + "\n" + TMPArray2[2];
+              }
+              new_model_data +=
+                TMPArray[0] +
+                "," +
+                TMPArray[1] +
+                ",\n" +
+                TMPArray[2] +
+                "," +
+                TMPArray[3] +
+                ",\n";
+              for (var l = 4; l < TMPArray.length - 1; l++) {
+                new_model_data += TMPArray[l] + ",\n";
+              }
+              TMPArray_final = TMPArray[TMPArray.length - 1].split("=")[0];
+              if (TMPArray_final == "Ref") {
+                new_model_data += TMPArray[TMPArray.length - 1];
+              } else {
+                new_model_data += TMPArray[TMPArray.length - 1] + ",";
+              }
+
+              // var model_data_splited = model_data.split(",");
+              // var part_1 = model_data_splited.slice(0, 13).join("\n");
+              // var part_2 = "2 3 0 0 0"; // 2 for Scope theta, 3 for Scope+Observe omega
+              // var part_3 = "MSu=1 1 1,";
+              // var part_4 = model_data_splited
+              //   .slice(15, model_data_splited.length)
+              //   .join("\n");
+              // var new_model_data =
+              //   part_1 + "\n" + part_2 + "\n" + part_3 + "\n" + part_4;
+
+              devSG.setAttribute("ModelData", new_model_data);
+            } else if (Values[k] == "off") {
+              var model_data = devSG.getAttribute("ModelData");
+
+              var TMPArray = SPArray();
+              TMPArray.splitParams(model_data);
+              new_model_data = "";
+              attribute_to_modify = 0;
+              for (var j = 0; j < TMPArray.length - 1; j++) {
+                TMPArray1 = TMPArray[j].split("MSu");
+                if (TMPArray[j].length != TMPArray1[0].length) {
+                  attribute_to_modify = j;
+                }
+              }
+              if (attribute_to_modify != 0) {
+                TMPArray2 = TMPArray[attribute_to_modify].split("\n");
+                // TMPArray2[0] = "1 4 0 0 0 6780"
+                TMPArray2[1] = "0 1 0 0 0";
+                TMPArray2[2] = "MSu=1 1 1";
+                TMPArray[attribute_to_modify] =
+                  TMPArray2[0] + "\n" + TMPArray2[1] + "\n" + TMPArray2[2];
+              }
+              new_model_data +=
+                TMPArray[0] +
+                "," +
+                TMPArray[1] +
+                ",\n" +
+                TMPArray[2] +
+                "," +
+                TMPArray[3] +
+                ",\n";
+              for (var l = 4; l < TMPArray.length - 1; l++) {
+                new_model_data += TMPArray[l] + ",\n";
+              }
+              TMPArray_final = TMPArray[TMPArray.length - 1].split("=")[0];
+              if (TMPArray_final == "Ref") {
+                new_model_data += TMPArray[TMPArray.length - 1];
+              } else {
+                new_model_data += TMPArray[TMPArray.length - 1] + ",";
+              }
+              // var model_data_splited = model_data.split("\n");
+              // var part_1 = model_data_splited.slice(0, 13).join("\n");
+              // var part_2 = "0 1 0 0 0,"; // remain omega observe
+              // var part_3 = "MSu=1 1 1,";
+              // var part_4 = model_data_splited
+              //   .slice(15, model_data_splited.length)
+              //   .join("\n");
+              // var new_model_data =
+              //   part_1 + "\n" + part_2 + "\n" + part_3 + "\n" + part_4;
+
+              devSG.setAttribute("ModelData", new_model_data);
+            }
+          } else if (Parameters[k] == "omega") {
+            if (Values[k] == "on") {
+              var model_data = devSG.getAttribute("ModelData");
+              var model_data_splited = model_data.split("\n");
+              var part_1 = model_data_splited.slice(0, 13).join("\n");
+              var part_2 = "0 3 0 0 0"; // 3 for Scope+Observe omega
+              var part_3 = "MSu=1 1 1";
+              var part_4 = model_data_splited
+                .slice(15, model_data_splited.length)
+                .join("\n");
+              var new_model_data =
+                part_1 + "\n" + part_2 + "\n" + part_3 + "\n" + part_4;
+              devSG.setAttribute("ModelData", new_model_data);
+            } else if (Values[k] == "off") {
+              var model_data = devSG.getAttribute("ModelData");
+              var model_data_splited = model_data.split("\n");
+              var part_1 = model_data_splited.slice(0, 13).join("\n");
+              var part_2 = "0 1 0 0 0"; // remain omega observe
+              var part_3 = "MSu=1 1 1";
+              var part_4 = model_data_splited
+                .slice(15, model_data_splited.length)
+                .join("\n");
+              var new_model_data =
+                part_1 + "\n" + part_2 + "\n" + part_3 + "\n" + part_4;
+              devSG.setAttribute("ModelData", new_model_data);
+            }
+          }
+        }
+        var oDevSG = new oDevice_SM(devSG);
+        // alert((model_data = devSG.getAttribute("ModelData")));
+        oDevSG.SaveData();
+      }
+    }
+  } else if (deviceType == "loadLF" || deviceType == 2) {
+    /**
+     ** Parameters - Must be writing equal to the name below.
+     * @param {string} Nominal_Voltage- In kVRMSLL.
+     * @param {string or number} Voltage: Voltage in kVRMSLL
+     * @param {string or number} P_loadLF: Active Power in MW.
+     * @param {string or number} Q_loadLF: Reactive Power in MVAR
+     * @param {string or number} Np: dependency of load active power on voltage (0,1 or 2).
+     * @param {string or number} Nq: dependency of load reactive power on voltage (0,1 or 2).
+     */
+    parseScriptFile("pqload_m.dwj");
+    var all_LoadLF = cct.devices(
+      4,
+      -1,
+      6,
+      "LibType",
+      "PQ load with load-flow (LF)"
+    );
+    var all_LoadLF_YG = cct.devices(
+      4,
+      -1,
+      6,
+      "LibType",
+      "PQ load Yg with load-flow (LF)"
+    );
+    // Primer caso es cuando hay algun error en NP o NQ (permite cambiar
+    // los parametros de todos los loadLF)
+    if (Names == "all") {
+      for (var i = 0; i < all_LoadLF.length; i++) {
+        var devLoadLF = all_LoadLF[i];
+        var oDevLoadLF = new oDevice_pqload(devLoadLF);
+        for (var k = 0; k < Parameters.length; k++) {
+          if (Parameters[k] == "Np") {
+            oDevLoadLF.Parameters.Np_A = String(Values[k]);
+            oDevLoadLF.SaveData();
+          } else if (Parameters[k] == "Nq") {
+            oDevLoadLF.Parameters.Nq_A = String(Values[k]);
+            oDevLoadLF.SaveData();
+          }
+        }
+      }
+    } else if (typeof Names == "object") {
+      // Sino es el caso entonces procedo a modificar los parametros de los loadLF
+      // * Recorro todos los nombres que quiero cambiar
+      for (var i = 0; i < Names.length; i++) {
+        // * Recorro todos los loadLF del circuito
+        for (var j = 0; j < all_LoadLF.length; j++) {
+          var devLoadLF = all_LoadLF[j];
+          //* Si encuentra el nombre entonces comienzo a hacer los cambios
+          if (devLoadLF.getAttribute("Name") == Names[i]) {
+            var oDevLoadLF = new oDevice_pqload(devLoadLF);
+            // * voy a buscar el nombre de cada parametro
+            for (var k = 0; k < Parameters.length; k++) {
+              if (Parameters[k] == "Nominal_Voltage") {
+                oDevLoadLF.Parameters.voltage_A = String(Values[i][k]);
+              } else if (Parameters[k] == "P_loadLF") {
+                oDevLoadLF.Parameters.activePower_A = String(Values[i][k]);
+                oDevLoadLF.Parameters.activePower_B = String(Values[i][k]);
+                oDevLoadLF.Parameters.activePower_C = String(Values[i][k]);
+              } else if (Parameters[k] == "Q_loadLF") {
+                oDevLoadLF.Parameters.reactivePower_A = String(Values[i][k]);
+                oDevLoadLF.Parameters.reactivePower_B = String(Values[i][k]);
+                oDevLoadLF.Parameters.reactivePower_C = String(Values[i][k]);
+              } else if (Parameters[k] == "Np") {
+                oDevLoadLF.Parameters.Np_A = String(Values[i][k]);
+              } else if (Parameters[k] == "Nq") {
+                oDevLoadLF.Parameters.Nq_A = String(Values[i][k]);
+              }
+            }
+            oDevLoadLF.SaveData();
+            break;
+          }
+        }
+        // * Si no lo encontro en los PQ load LF entonces lo busca en los PQ load YG
+        for (var j = 0; j < all_LoadLF_YG.length; j++) {
+          var devLoadLF = all_LoadLF_YG[j];
+          //* Si encuentra el nombre entonces comienzo a hacer los cambios
+          if (devLoadLF.getAttribute("Name") == Names[i]) {
+            var oDevLoadLF = new oDevice_pqload(devLoadLF);
+            // * voy a buscar el nombre de cada parametro
+            for (var k = 0; k < Parameters.length; k++) {
+              if (Parameters[k] == "Nominal_Voltage") {
+                oDevLoadLF.Parameters.voltage_A = String(Values[i][k]);
+              } else if (Parameters[k] == "P_loadLF") {
+                oDevLoadLF.Parameters.activePower_A = String(Values[i][k]);
+                oDevLoadLF.Parameters.activePower_B = String(Values[i][k]);
+                oDevLoadLF.Parameters.activePower_C = String(Values[i][k]);
+              } else if (Parameters[k] == "Q_loadLF") {
+                oDevLoadLF.Parameters.reactivePower_A = String(Values[i][k]);
+                oDevLoadLF.Parameters.reactivePower_B = String(Values[i][k]);
+                oDevLoadLF.Parameters.reactivePower_C = String(Values[i][k]);
+              } else if (Parameters[k] == "Np") {
+                oDevLoadLF.Parameters.Np_A = String(Values[i][k]);
+              } else if (Parameters[k] == "Nq") {
+                oDevLoadLF.Parameters.Nq_A = String(Values[i][k]);
+              }
+            }
+            oDevLoadLF.SaveData();
+            break;
+          }
+        }
+      }
+    }
+  } else if (deviceType == "loadLF2" || deviceType == 22) {
+    /**
+     ** Parameters - Must be writing equal to the name below.
+     * @param {string} Nominal_Voltage- In kVRMSLL.
+     * @param {string or number} Voltage: Voltage in kVRMSLL
+     * @param {string or number} P_loadLF: Active Power in MW.
+     * @param {string or number} Q_loadLF: Reactive Power in MVAR
+     * @param {string or number} Np: dependency of load active power on voltage (0,1 or 2).
+     * @param {string or number} Nq: dependency of load reactive power on voltage (0,1 or 2).
+     */
+    parseScriptFile("pqload_m.dwj");
+    var all_LoadLF = cct.devices(
+      4,
+      -1,
+      6,
+      "LibType",
+      "PQ load with load-flow (LF)"
+    );
+    var all_LoadLF_YG = cct.devices(
+      4,
+      -1,
+      6,
+      "LibType",
+      "PQ load Yg with load-flow (LF)"
+    );
+    // Primer caso es cuando hay algun error en NP o NQ (permite cambiar
+    // los parametros de todos los loadLF)
+    if (Names == "all") {
+      for (var i = 0; i < all_LoadLF.length; i++) {
+        var devLoadLF = all_LoadLF[i];
+        var oDevLoadLF = new oDevice_pqload(devLoadLF);
+        for (var k = 0; k < Parameters.length; k++) {
+          if (Parameters[k] == "Np") {
+            oDevLoadLF.Parameters.Np_A = String(Values[k]);
+            oDevLoadLF.SaveData();
+          } else if (Parameters[k] == "Nq") {
+            oDevLoadLF.Parameters.Nq_A = String(Values[k]);
+            oDevLoadLF.SaveData();
+          }
+        }
+      }
+    } else if (typeof Names == "object") {
+      // Sino es el caso entonces procedo a modificar los parametros de los loadLF
+      // * Recorro todos los nombres que quiero cambiar
+      for (var i = 0; i < Names.length; i++) {
+        // * Recorro todos los loadLF del circuito
+        for (var j = 0; j < all_LoadLF.length; j++) {
+          var devLoadLF = all_LoadLF[j];
+          //* Si encuentra el nombre entonces comienzo a hacer los cambios
+          if (devLoadLF.getAttribute("Name") == Names[i]) {
+            var oDevLoadLF = new oDevice_pqload(devLoadLF);
+            // * voy a buscar el nombre de cada parametro
+            for (var k = 0; k < Parameters.length; k++) {
+              if (Parameters[k] == "Nominal_Voltage") {
+                oDevLoadLF.Parameters.voltage_A = String(Values[i][k]);
+              } else if (Parameters[k] == "P_loadLF") {
+                oDevLoadLF.Parameters.activePower_A = String(Values[i][k]);
+              } else if (Parameters[k] == "Q_loadLF") {
+                oDevLoadLF.Parameters.reactivePower_A = String(Values[i][k]);
+              } else if (Parameters[k] == "Np") {
+                oDevLoadLF.Parameters.Np_A = String(Values[i][k]);
+              } else if (Parameters[k] == "Nq") {
+                oDevLoadLF.Parameters.Nq_A = String(Values[i][k]);
+              }
+            }
+            oDevLoadLF.SaveData();
+            break;
+          }
+        }
+        // * Si no lo encontro en los PQ load LF entonces lo busca en los PQ load YG
+        for (var j = 0; j < all_LoadLF_YG.length; j++) {
+          var devLoadLF = all_LoadLF_YG[j];
+          //* Si encuentra el nombre entonces comienzo a hacer los cambios
+          if (devLoadLF.getAttribute("Name") == Names[i]) {
+            var oDevLoadLF = new oDevice_pqload(devLoadLF);
+            // * voy a buscar el nombre de cada parametro
+            for (var k = 0; k < Parameters.length; k++) {
+              if (Parameters[k] == "Nominal_Voltage") {
+                oDevLoadLF.Parameters.voltage_A = String(Values[i][k]);
+              } else if (Parameters[k] == "P_loadLF") {
+                oDevLoadLF.Parameters.activePower_A = String(Values[i][k]);
+              } else if (Parameters[k] == "Q_loadLF") {
+                oDevLoadLF.Parameters.reactivePower_A = String(Values[i][k]);
+              } else if (Parameters[k] == "Np") {
+                oDevLoadLF.Parameters.Np_A = String(Values[i][k]);
+              } else if (Parameters[k] == "Nq") {
+                oDevLoadLF.Parameters.Nq_A = String(Values[i][k]);
+              }
+            }
+            oDevLoadLF.SaveData();
+            break;
+          }
+        }
+      }
+    }
+  } else if (deviceType == "WP" || deviceType == 5) {
+    /**
+     ** Parameters - Must be writing equal to the name below.
+     * @param {string} N_wind_turbines - Number of PV arrays.
+     * @param {string or number} N_WT_inServ: Number of PV arrays in service.
+     * @param {string or number} Q_ctrlMode: Q-control mode: Q,V or PF.
+     * @param {string or number} Reactive_ref: Reactive power reference in pu.
+     * @param {string or number} Active_ref: Active power reference in pu.
+     * @param {string or number} Wind_speed: Mean wind speed. (no se ha agregado)
+     */
+    parseScriptFile("WECC_WP_m.dwj");
+    var all_WECC_WP_1 = cct.devices(4, -1, 5, "LibType", "WECC WP"); //TODO concat this two list and try with only 1 for-loop
+    var all_WECC_WP_2 = cct.devices(4, -1, 5, "LibType", "WECC Wind park"); //change name in new versions
+    var all_WECC_WP = []; // only one array
+    for (var i = 0; i < all_WECC_WP_1.length; i++) {
+      all_WECC_WP.push(all_WECC_WP_1[i]);
+    }
+    for (var j = 0; j < all_WECC_WP_2.length; j++) {
+      all_WECC_WP.push(all_WECC_WP_2[j]);
+    }
+    parseScriptFile("WP_FC_m.dwj");
+    var all_WP_FC = cct.devices(4, -1, 5, "LibType", "FC Wind park");
+    parseScriptFile("WP_DFIG_m.dwj");
+    var all_WP_DFIG = cct.devices(4, -1, 5, "LibType", "DFIG Wind park");
+    // Primer caso para cuando hay que cambiar todos los elementos
+    // util para los scopes y observe
+    if (Names == "all") {
+      for (var i = 0; i < all_WECC_WP.length; i++) {
+        var devWECC = all_WECC_WP[i];
+        var oDevWECC_WP = new oDevice_WECC_WP(devWECC);
+        var parameters_map = {
+          "Power": ["SCOPE_Park_P", "SCOPE_Park_Q"],
+          "P": ["SCOPE_Park_P"],
+          "Q": ["SCOPE_Park_Q"],
+          "Id": ["SCOPE_Id"],
+          "Iq": ["SCOPE_Iq"],
+          "PLL_freq": ["SCOPE_PLL_freq"]
+        };
+
+        for (var k = 0; k < Parameters.length; k++) {
+          var param = Parameters[k];
+          var value = Values[k] == "on" ? "1" : "0";
+
+          if (parameters_map[param]) {
+            for (var j = 0; j < parameters_map[param].length; j++) {
+              var property = parameters_map[param][j];
+              oDevWECC_WP.Parameters[property] = value;
+            }
+          }
+        }
+        oDevWECC_WP.SaveData();
+      }
+      for (var i = 0; i < all_WECC_WP_2.length; i++) {
+        var devWECC = all_WECC_WP_2[i];
+        var oDevWECC_WP = new oDevice_WECC_WP(devWECC);
+        var parameters_map = {
+          "Power": ["SCOPE_Park_P", "SCOPE_Park_Q"],
+          "P": ["SCOPE_Park_P"],
+          "Q": ["SCOPE_Park_Q"],
+          "Id": ["SCOPE_Id"],
+          "Iq": ["SCOPE_Iq"],
+          "PLL_freq": ["SCOPE_PLL_freq"]
+        };
+
+        for (var k = 0; k < Parameters.length; k++) {
+          var param = Parameters[k];
+          var value = Values[k] == "on" ? "1" : "0";
+
+          if (parameters_map[param]) {
+            for (var j = 0; j < parameters_map[param].length; j++) {
+              var property = parameters_map[param][j];
+              oDevWECC_WP.Parameters[property] = value;
+            }
+          }
+        }
+        oDevWECC_WP.SaveData();
+      }
+      for (var i = 0; i < all_WP_FC.length; i++) {
+        var devWP_FC = all_WP_FC[i];
+        var oDevWP_FC = new oDevice_WP_FC(devWP_FC);
+        var parameters_map = {
+          "Power": ["SCOPE_Park_P", "SCOPE_Park_Q"],
+          "P": ["SCOPE_Park_P"],
+          "Q": ["SCOPE_Park_Q"],
+          "Id": ["SCOPE_Id"],
+          "Iq": ["SCOPE_Iq"],
+          "PLL_freq": ["SCOPE_PLL_freq"]
+        };
+
+        for (var k = 0; k < Parameters.length; k++) {
+          var param = Parameters[k];
+          var value = Values[k] == "on" ? "1" : "0";
+
+          if (parameters_map[param]) {
+            for (var j = 0; j < parameters_map[param].length; j++) {
+              var property = parameters_map[param][j];
+              oDevWP_FC.Parameters[property] = value;
+            }
+          }
+        }
+        oDevWP_FC.SaveData();
+      }
+    } else {
+      // * Recorro todos los nombres que quiero cambiar
+      for (var i = 0; i < Names.length; i++) {
+        var found = false; // Esta variable indica si encontramos el nombre en los bucles anteriores
+        //* Recorro todos los WECC del circuito
+        for (var j = 0; j < all_WECC_WP.length; j++) {
+          var devWECC = all_WECC_WP[j];
+          // * Si encuentra el nombre entonces comienzo a hacer los cambios
+          if (devWECC.getAttribute("Name") == Names[i]) {
+            var oDevWECC_WP = new oDevice_WECC_WP(devWECC);
+            // * voy a buscar el nombre de cada parametro
+            for (var k = 0; k < Parameters.length; k++) {
+              if (Parameters[k] == "N_wind_turbines") {
+                // * El valor que busco esta en el indice del nombre y en la posicion del parametro
+                oDevWECC_WP.Parameters.Ngen = String(Values[i][k]);
+              } else if (Parameters[k] == "N_WT_inServ") {
+                oDevWECC_WP.Parameters.Ngen_in_service = String(Values[i][k]);
+              } else if (Parameters[k] == "Q_ctrlMode") {
+                oDevWECC_WP.Parameters.QC_select = String(Values[i][k]);
+              } else if (Parameters[k] == "Reactive_ref") {
+                oDevWECC_WP.Parameters.Qpoi_pu = String(Values[i][k]);
+              } else if (Parameters[k] == "Active_ref") {
+                oDevWECC_WP.Parameters.Pref_poi = String(Values[i][k]);
+              }
+            }
+            oDevWECC_WP.SaveData();
+            found = true;
+            break;
+          }
+        }
+        if (!found) {
+          //si aún no enuentro elnombre busco en FC
+          //* Recorro todos los FC del circuito
+          for (var j = 0; j < all_WP_FC.length; j++) {
+            var devWP_FC = all_WP_FC[j];
+            // * Si encuentra el nombre entonces comienzo a hacer los cambios
+            if (devWP_FC.getAttribute("Name") == Names[i]) {
+              var oDevWP_FC = new oDevice_WP_FC(devWP_FC);
+              // * voy a buscar el nombre de cada parametro
+              for (var k = 0; k < Parameters.length; k++) {
+                if (Parameters[k] == "N_PV_arrays") {
+                  // * El valor que busco esta en el indice del nombre y en la posicion del parametro
+                  oDevWP_FC.Parameters.Ngen = String(Values[i][k]);
+                } else if (Parameters[k] == "N_PV_inServ") {
+                  oDevWP_FC.Parameters.Ngen_in_service = String(Values[i][k]);
+                } else if (Parameters[k] == "Q_ctrlMode") {
+                  oDevWP_FC.Parameters.QC_select = String(Values[i][k]);
+                } else if (Parameters[k] == "Reactive_ref") {
+                  oDevWP_FC.Parameters.Qpoi_pu = String(Values[i][k]);
+                } else if (Parameters[k] == "Active_ref") {
+                  oDevWP_FC.Parameters.Pgen = String(Values[i][k]);
+                } else if (Parameters[k] == "Wind_speed") {
+                  oDevWP_FC.Parameters.Mean_wind_speed = String(Values[i][k]);
+                }
+              }
+              oDevWP_FC.SaveData();
+              break;
+            }
+          }
+        }
+        //*TODO  Recorro todos los DFIG del circuito (agregar a futuro)
+      }
+    }
+  } else if (deviceType == "LF" || deviceType == 10) {
+    /**
+     ** Parameters - Must be writing equal to the name below.
+     * @param {string} BusType - it can be PV or PQ.
+     * @param {string or number} Voltage: Voltage in kVRMSLL.
+     * @param {string or number} P: Active Power in MW.
+     * @param {string or number} Q_set: Reactive Power in MVAR
+     * @param {string or number} Qmax: Max limit of Reactive Power in MVAR.
+     * @param {string or number} Qmin: Min limit of Reactive Power in MVAR.
+     */
+    parseScriptFile("load_flow_bus_m.dwj");
+    var all_LF = cct.devices(4, -1, 5, "LibType", "Load-Flow Bus");
+    // * Recorro todos los nombres que quiero cambiar
+    writeln(
+      "############################################################################"
+    );
+    writeln("Begin to change the parameters of the Load-Flow Bus devices\n");
+    for (var i = 0; i < Names.length; i++) {
+      //* Recorro todos los LF del circuito
+      for (var j = 0; j < all_LF.length; j++) {
+        var devLF = all_LF[j];
+        // * Si encuentra el nombre entonces comienzo a hacer los cambios
+        if (devLF.getAttribute("Name") == Names[i]) {
+          var oDevLF = new oDevice_Load_flow_bus(devLF);
+          // * voy a buscar el nombre de cada parametro
+          for (var k = 0; k < Parameters.length; k++) {
+            if (Parameters[k] == "BusType") {
+              // * El valor que busco esta en el indice del nombre y en la posicion del parametro
+              oDevLF.Bus_Type = String(Values[i][k]);
+            } else if (Parameters[k] == "Voltage") {
+              oDevLF.Voltage_Slack = String(Values[i][k]);
+            } else if (Parameters[k] == "P") {
+              oDevLF.P_set = String(Values[i][k]);
+            } else if (Parameters[k] == "Qset") {
+              oDevLF.Q_set = String(Values[i][k]);
+            } else if (Parameters[k] == "Qmax") {
+              oDevLF.Q_max = String(Values[i][k]);
+            } else if (Parameters[k] == "Qmin") {
+              oDevLF.Q_min = String(Values[i][k]);
+            }
+          }
+          oDevLF.SaveData();
+          break;
+        }
+      }
+    }
+    writeln(
+      "Changes in parameters of the Load-Flow Bus devices asoociated to the SG were completed"
+    );
+    writeln(Names.length + " Load-Flow Bus devices were modified");
+    writeln(
+      "############################################################################"
+    );
+  }
+}
+
+function interpreteFile(fileWithContent, deviceType) {
+  /**
+   ** Interprete info from a file.
+   * @param {object} fileWithContent - Information to interprete.
+   * @param {number} deviceType - Assign a way to interprete info, depends on the application.
+   * - 1 => weccPV: WECC PV parks.
+   * - 2 => For wecc_park_generator function.
+   * - 3 => anyPV: PV parks.
+   * - 4 => SG: Synchronous Generators.
+   * - 5 => lfToSG: lf devices associated to every SG.
+   * - 6 => tfToSG: tf devices associated to every SG.
+   * - 7 => allToSG: lf and tf devices associated to every SG.
+   * - 8 => loadLF: loads with a lf, only for the firs layer.
+   * - 9 => lines: lines transmissions with CP model.
+   * - 10 =>
+   */
+  //
+
+  if (deviceType == 1) {
+    // FOR TEMPLATE CSV TO LOAD SCADA DATA
+    var separator = "\n"; //the separator is the new line
+    var Elements = fileWithContent.split(separator);
+    //TODO for load operation point from csv
+    //initialization of the attributes this function returns
+    this.names = [];
+    this.attributes = [];
+    this.values = [];
+
+    var LinesContent;
+    // Obtain names
+    for (var nElement = 1; nElement < Elements.length; nElement++) {
+      LinesContent = Elements[nElement].split(","); // split by ,
+      this.names.push(LinesContent[0]); // save the name
+    }
+    // Obtain attributes
+    for (var nElement = 0; nElement < 1; nElement++) {
+      LinesContent = Elements[nElement].split(","); // split by ,
+      for (var i = 1; i < LinesContent.length; i++) {
+        this.attributes.push(LinesContent[i]);
+      }
+    }
+    // Obtain values
+    for (var nElement = 1; nElement < Elements.length; nElement++) {
+      LinesContent = Elements[nElement].split(","); // split by ,
+      var values_list = [];
+      for (var i = 1; i < LinesContent.length; i++) {
+        values_list.push(LinesContent[i]);
+      }
+      this.values.push(values_list);
+    }
+  } else if (deviceType == 2) {
+    var separators = "\n"; //double space for separator
+    var Elements = fileWithContent.split(separators); //Make sure there is no space before or after ***
+    //Special case wecc_park_generator function.
+    //initialization of the attribute this function returns
+    this.header_dict = {};
+    this.data = [];
+    // fill the parameters to assign
+    var header_element = Elements[0].split(","); //first row is the header
+    // create a dict with the parameters of the wecc
+    for (var nElement = 0; nElement < header_element.length; nElement++) {
+      this.header_dict[header_element[nElement]] = nElement;
+    }
+    // Define the variables to modify
+    var LinesContent;
+    //start from 1 to bypass the first row with headers
+    for (var nElement = 1; nElement < Elements.length - 1; nElement++) {
+      //Return array with elements of the rows
+      LinesContent = Elements[nElement].split(",");
+      this.data.push(LinesContent); //List with values
+    }
+  } else if (deviceType == 5) {
+    var separators = "\n"; //double space for separator
+    var Elements = fileWithParametersContent.split(separators); //Make sure there is no space before or after ***
+    //initialization of the attribute this function returns
+    this.names_LF = [];
+    this.parameters_LF = [];
+    this.values_LF = [];
+
+    var LinesContent;
+    // var LineElements; //Elements in between , in each line1
+    // var LineValues; //Value in each line
+    // Define the variables to modify
+    for (var nElement = 1; nElement < 2; nElement++) {
+      LinesContent = Elements[nElement].split("\n");
+      this.parameters_LF.push(LinesContent[0].split(",")[1]); //BusType
+      this.parameters_LF.push(LinesContent[1].split(",")[1]); //Voltage
+      this.parameters_LF.push(LinesContent[2].split(",")[1]); //P
+      this.parameters_LF.push(LinesContent[3].split(",")[1]); //Qset
+    }
+    //array of arrays with the values to modify
+    for (var nElement = 1; nElement < Elements.length - 1; nElement++) {
+      //Return array which elements are the lines of the file
+      LinesContent = Elements[nElement].split("\n");
+      var aux_values = [];
+      this.names_LF.push(LinesContent[0].split(",")[0]); //First element of the line is the name.
+      //Ex:
+      //this.deviceType = [PQ load with load-flow (LF), Load-Flow Bus, Load-Flow Bus]
+      aux_values.push(LinesContent[0].split(",")[2]); //PV
+      aux_values.push(LinesContent[1].split(",")[2]); //14.076
+      aux_values.push(LinesContent[2].split(",")[2]); //184
+      aux_values.push(LinesContent[3].split(",")[2]); //73.8
+      this.values_LF.push(aux_values);
+      // this.parameters_LF.push(LinesContent[0].split(",")[0]); //Remove whitespaces and split by ,
+      //Ex:
+      //this.Parameters[0][0] = Name
+      //this.Parameters[0][1] = activePower_A
+      //this.Parameters[0][2] = reactivePower_A
+      //             :
+      //this.Parameters[2][0] = Name
+      //this.Parameters[2][1] = P_set
+      //this.Parameters[2][2] = Q_set
+
+      // this.Values.push(LinesContent[2].replace(/\s/g, "").split(",")); //Remove whitespaces and split by ,
+      //Ex:
+      //this.Values[0][0] = Load1
+      //this.Values[0][1] = 20
+      //this.Values[0][1] = 30
+      //             :
+      //this.Values[2][0] = LF2
+      //this.Values[2][1] = 6
+      //this.Values[2][1] = 4
+    }
+  } else if (deviceType == 3) {
+    var separators = "\n"; //double space for separator
+    var Elements = fileWithParametersContent.split(separators); //Make sure there is no space before or after ***
+    //initialization of the attribute this function returns
+    this.names_PV = [];
+    this.parameters_PV = [];
+    this.values_PV = [];
+
+    // fill the parameters to assign
+    var header = Elements[0].split(";");
+    // start from 1 to bypass the name of the device
+    for (var nElement = 1; nElement < header.length; nElement++) {
+      this.parameters_PV.push(header[nElement]);
+    }
+    // this.parameters_LF.push(LinesContent[0].split(",")[1]);
+
+    // var LineElements; //Elements in between , in each line1
+    // var LineValues; //Value in each line
+    // Define the variables to modify
+    var LinesContent;
+    //start from 1 to bypass the first row with headers
+    for (var nElement = 1; nElement < Elements.length - 1; nElement++) {
+      //Return array with elements of the rows
+      LinesContent = Elements[nElement].split(";");
+      this.names_PV.push(LinesContent[0]); //First element of the line is the name.
+      // now i create a aux variable to save an array with the values of the every
+      // parameter associate to the device
+      var aux_values = [];
+      for (var i = 1; i < LinesContent.length; i++) {
+        aux_values.push(LinesContent[i]);
+      }
+      this.values_PV.push(aux_values);
+    }
+  } else if (deviceType == 10) {
+    var separators = "\n"; //double space for separator
+    var Elements = fileWithParametersContent.split(separators); //Make sure there is no space before or after ***
+    //TODO  this is a special case for the read of transfers lines
+    //initialization of the attribute this function returns
+    this.names = [];
+    this.parameters = [];
+    // fill the parameters to assign
+    var header = Elements[0].split(";");
+    // start from 1 to bypass the name of the device
+    for (var nElement = 0; nElement < header.length; nElement++) {
+      this.parameters.push(header[nElement]);
+    }
+    // Define the variables to modify
+    var LinesContent;
+    //start from 1 to bypass the first row with headers
+    for (var nElement = 1; nElement < Elements.length - 1; nElement++) {
+      //Return array with elements of the rows
+      LinesContent = Elements[nElement].split(";");
+      this.names.push(LinesContent[0]); //First element of the line is the name.
+    }
+  }
+}
+
+function returnFileContent(fileName) {
+  //return the full path of file name assuming fileName is located in the same folder as the design.
+  var output_file = check_my_filename(fileName);
+
+  // var output_file = fileName;
+  //Create file object. The documentation is in Help & Support/5 - Javascript based Scripting in EMTP, link for SPFile.
+  fid = SPFile(output_file);
+
+  //Opens the file for read-only access.
+  if (fid.openRead()) {
+    var content = fid.readText(); //Reads the contents of the file and returns a string
+    fid.close();
+    return content;
+  } else {
+    //Sanity check
+    alert("Error : impossible to read the parameter file: " + fileName);
+    halt(); //Stop the script
+  }
+}
+
+function dataOf(names, deviceType, attribute) {
+  /**
+   ** Return specific data of the selected device type for certain names.
+   *  Principal use for check results of the Load Flow.
+   * @param {object or string} names
+   * @param {object or string} attribute
+   * @param {string} deviceType
+   * - 0 => PV: PV parks.
+   * - 1 => SG: Synchronous Generators.
+   * - 2 => loadLF: loads with a lf, only for the firs layer.
+   * - 3 => lines: lines transmissions with CP model.
+   * - 4 => TF: transformers.
+   * - 5 => WP: Wind Parks.
+   * - 6 => buses: names of the buses (only on top level).
+   */
+  //TODO add sanity check for this with the type (always Object)
+
+  // parseScriptFile("load_flow_view_m.dwj");
+
+  // Construct header based on attributes
+  var header = ["Name"];
+  for (var i = 0; i < attribute.length; i++) {
+    //TODO add more attributes to obtain
+    if (attribute[i] == "Transfers") {
+      header.push("P [W]");
+      header.push("Q [var]");
+    } else if (attribute[i] == "Voltage") {
+      header.push("Voltage");
+      header.push("Angle");
+    } else {
+      header.push(attribute[i]);
+    }
+  }
+  var value = [];
+  if (deviceType == 3) {
+    //TODO hacer una generalización
+    for (var i = 0; i < names.length; i++) {
+      // search for every line
+      var devLine = cct.devices(4, -1, 6, "Name", names[i])[0];
+      var aux_values = []; // aux values for organization
+      for (var attr = 0; attr < attribute.length; attr++) {
+        // search for every attribute
+        // voy a hacer if para cada caso de valor de atrribute, ej: attri == "name"
+        if (attribute[attr] == "Transfers") {
+          parseScriptFile("get_ss_solution.dwj");
+          var RequestObject = new Array();
+          RequestObject[0] = new DefineSignalDeviceViewSSRequestObject();
+          RequestObject[0].Device = devLine; //Searched device
+          RequestObject[0].LForSS = 0; // 1 SS solution, 0 LF solution
+          //*Retrieve data, execute the search
+          get_ss_solution(RequestObject);
+          var P = RequestObject[0].PowerCurrentDataFields.Ptotalk;
+          aux_values.push(P);
+          var Q = RequestObject[0].PowerCurrentDataFields.Qtotalk;
+          aux_values.push(Q);
+        }
+      }
+      value.push(aux_values);
+    }
+    var output = header.join(",") + "\n";
+    for (var i = 0; i < value.length; i++) {
+      output += names[i] + "," + value[i].join(",") + "\n";
+    }
+    return output;
+  } else if (deviceType == 6) {
+    //TODO hacer que identifique el voltaje en el nombre
+    for (var i = 0; i < names.length; i++) {
+      // search for every line
+      var devBus = cct.signals(2048, 6, "Name", names[i])[0];
+      var aux_values = []; // aux values for organization
+      for (var attr = 0; attr < attribute.length; attr++) {
+        // search for every attribute
+        // voy a hacer if para cada caso de valor de atrribute, ej: attri == "name"
+        if (attribute[attr] == "Voltage") {
+          parseScriptFile("get_ss_solution.dwj");
+          var RequestObject = new Array();
+          RequestObject[0] = new DefineSignalDeviceViewSSRequestObject();
+          RequestObject[0].Signal = devBus; //Searched signal
+          RequestObject[0].LForSS = 0; // 1 SS solution, 0 LF solution
+          //*Retrieve data, execute the search
+          get_ss_solution(RequestObject);
+          var V = RequestObject[0].V1_mag;
+          aux_values.push(V);
+          var Vang = RequestObject[0].V1_phase;
+          aux_values.push(Vang);
+        }
+      }
+      value.push(aux_values);
+    }
+    var output = header.join(",") + "\n";
+    for (var i = 0; i < value.length; i++) {
+      output += names[i] + "," + value[i].join(",") + "\n";
+    }
+    return output;
+  }
+}
+
+function loadOperationPoint(dataFile, deviceType) {
+  /**
+   ** Load the data of the operation point for a specific device type from a file.
+   * @param {string} dataFile - String with the name of the file.
+   * @param {string} deviceType - String with the number or name of the device type.
+   * @returns {string} - Message with the result of the operation.
+   * - 0 => PV: PV parks.
+   * - 1 => SG: Synchronous Generators.
+   * - 2 => loadLF: loads with a lf, only for the firs layer.
+   * - 3 => lines: lines transmissions with CP model.
+   * - 4 => TF: transformers.
+   * - 5 => WP: Wind Parks.
+   * - 6 => buses: names of the buses (only on top level).
+   * - 7 => lfToSG: lf devices associated to every SG.
+   * - 8 => tfToSG: tf devices associated to every SG.
+   * - 9 => allToSG: lf and tf devices associated to every SG.
+   * - 10 => LF: all the LF devices in the circuit.
+   */
+
+  switch (deviceType) {
+    case "PV":
+    case 0:
+      var dataPV = returnFileContent(dataFile);
+      var op_PV = new interpreteFile(dataPV, 1);
+      changeData(op_PV.names, op_PV.attributes, op_PV.values, 0);
+      break;
+    case "loadLF":
+    case 2:
+      var dataLoadLF = returnFileContent(dataFile);
+      var op_loadLF = new interpreteFile(dataLoadLF, 1);
+      changeData(op_loadLF.names, op_loadLF.attributes, op_loadLF.values, 2);
+      break;
+    case "WP":
+    case 5:
+      var dataWP = returnFileContent(dataFile);
+      var op_WP = new interpreteFile(dataWP, 1);
+      changeData(op_WP.names, op_WP.attributes, op_WP.values, 5);
+      break;
+    case "LF":
+    case 10:
+      var dataLF = returnFileContent(dataFile);
+      var op_LF = new interpreteFile(dataLF, 1);
+      changeData(op_LF.names, op_LF.attributes, op_LF.values, 10);
+      break;
+  }
+}
+
+function models_to_lib(title_lib, name_lib, path_lib) {
+  /**
+   * Export models from a circuit into a Library and save (only for the LibTypes included "WECC PV park",
+   * "PV park","WECC WP","DFIG Wind park","FC Wind park","STATCOM","synchronous machine").
+   * @param {string} title_lib: title of the library (show in the GUI).
+   * @param {string} name_lib: name of the library (.clf).
+   * @param {string} path_lib: path of the library to save.
+   */
+  var title_lib, name_lib, new_lib, name_dev_lib, copy_dev, path_lib; // Lib options
+  var devs, status_final, mask_check; //general devs attributes
+  var devs_cc_1, dev_1, LibType, cct_2, name_1, status_1; //LEVEL 1
+  var devs_cc_2, dev_2, LibType_2, cct_3, name_2, status_2; //LEVEL 2
+  var devs_cc_3, dev_3, LibType_3, name_3, status_3; //LEVEL 3
+  //* Library options
+  new_lib = DWLibrary(path_lib + name_lib + ".clf");
+  new_lib.exists; // create the library
+  new_lib.title(title_lib);
+
+  //* Search for devices without mask (with subcircuits)
+  devs = cct.devices(4, -1, 6, "Script.Open.Dev", "");
+
+  for (var i = 0; i < devs.length; i++) {
+    dev_1 = devs[i];
+    status_1 = dev_1.getAttribute("Exclude");
+    //*********** LEVEL 2 */
+    cct_2 = dev_1.subCircuit; //cct is now the subcircuit of the dev
+    devs_cc_2 = cct_2.devices(4, -1, 4); // search in the cc
+    for (var j = 0; j < devs_cc_2.length; j++) {
+      //get the info of the dev in lvl 2
+      dev_2 = devs_cc_2[j];
+      LibType_2 = dev_2.getAttribute("LibType");
+      name_2 = dev_2.getAttribute("Name");
+      status_2 = dev_2.getAttribute("Exclude");
+      if (dev_2.getAttribute("Script.Open.Dev") == "") {
+        //*********** LEVEL 3 */
+        cct_3 = dev_2.subCircuit(); //cct is now the subcircuit of the dev
+        var devs_cc_3 = cct_3.devices(4, -1, 4); // search in the cc
+        for (var k = 0; k < devs_cc_3.length; k++) {
+          dev_3 = devs_cc_3[k];
+          LibType_3 = dev_3.getAttribute("LibType");
+          name_3 = dev_3.getAttribute("Name");
+          status_3 = dev_3.getAttribute("Exclude");
+          switch (LibType_3) {
+            case "synchronous machine":
+              dev_3.setAttribute("LibType_old", LibType_3);
+              status_final =
+                status_1 === "" && status_2 === "" && status_3 === ""
+                  ? ""
+                  : "_ex";
+              copy_dev = dev_2.detachedType(true, true, false, true); // Get the Type (False to get the rotation by default)
+              name_dev_lib = "SG_" + dev_2.getAttribute("Name") + status_final;
+              copy_dev.name(name_dev_lib); // change the name into the name of the device
+              new_lib.saveType(copy_dev); //Save the device in the library
+              dev_2.deleteAttribute("LibType_old"); //clean the aux attribute
+              dev_3.deleteAttribute("LibType_old");
+              break;
+            // case "PV park": //add this cases if you want
+            //   break;
+            // case "WECC Wind park":
+            //   break;
+            // case "DFIG Wind park":
+            //   break;
+            // case "FC Wind park":
+            //   break;
+          }
+        }
+      }
+      switch (LibType_2) {
+        case "synchronous machine":
+          dev_2.setAttribute("LibType_old", LibType_2);
+          status_final = status_1 === "" && status_2 === "" ? "" : "_ex";
+          copy_dev = dev_1.detachedType(true, true, false, true); // Get the Type (False to get the rotation by default)
+          name_dev_lib = "SG_" + dev_1.getAttribute("Name") + status_final;
+          copy_dev.name(name_dev_lib); // change the name into the name of the device
+          new_lib.saveType(copy_dev); //Save the device in the library
+          dev_1.deleteAttribute("LibType_old"); //clean the aux attribute
+          dev_2.deleteAttribute("LibType_old"); //clean the aux attribute
+        case "PV park":
+          dev_2.setAttribute("LibType_old", LibType_2);
+          status_final = status_1 === "" && status_2 === "" ? "" : "_ex";
+          copy_dev = dev_1.detachedType(true, true, false, true);
+          name_dev_lib = dev_1.getAttribute("Name") + status_final;
+          copy_dev.name(name_dev_lib);
+          new_lib.saveType(copy_dev);
+          dev_1.deleteAttribute("LibType_old");
+          break;
+        case "WECC PV park":
+          dev_2.setAttribute("LibType_old", LibType_2);
+          status_final = status_1 === "" && status_2 === "" ? "" : "_ex";
+          copy_dev = dev_1.detachedType(true, true, false, true);
+          name_dev_lib = dev_1.getAttribute("Name") + status_final;
+          copy_dev.name(name_dev_lib);
+          new_lib.saveType(copy_dev);
+          dev_1.deleteAttribute("LibType_old");
+          break;
+        case "WECC Wind park":
+          dev_2.setAttribute("LibType_old", LibType_2);
+          status_final = status_1 === "" && status_2 === "" ? "" : "_ex";
+          copy_dev = dev_1.detachedType(true, true, false, true);
+          name_dev_lib = dev_1.getAttribute("Name") + status_final;
+          copy_dev.name(name_dev_lib);
+          new_lib.saveType(copy_dev);
+          dev_1.deleteAttribute("LibType_old");
+          break;
+        case "DFIG Wind park":
+          dev_2.setAttribute("LibType_old", LibType_2);
+          status_final = status_1 === "" && status_2 === "" ? "" : "_ex";
+          copy_dev = dev_1.detachedType(true, true, false, true);
+          name_dev_lib = dev_1.getAttribute("Name") + status_final;
+          copy_dev.name(name_dev_lib);
+          new_lib.saveType(copy_dev);
+          dev_1.deleteAttribute("LibType_old");
+          break;
+        case "FC Wind park":
+          dev_2.setAttribute("LibType_old", LibType_2);
+          status_final = status_1 === "" && status_2 === "" ? "" : "_ex";
+          copy_dev = dev_1.detachedType(true, true, false, true);
+          name_dev_lib = dev_1.getAttribute("Name") + status_final;
+          copy_dev.name(name_dev_lib);
+          new_lib.saveType(copy_dev);
+          dev_1.deleteAttribute("LibType_old");
+          break;
+      }
+    }
+  }
+
+  //* Search for devices with mask (only top level)
+  var list_LibType = [
+    "WECC PV park",
+    "PV park",
+    "WECC WP",
+    "DFIG Wind park",
+    "FC Wind park",
+    "STATCOM",
+    "synchronous machine"
+  ];
+
+  for (var ii = 0; ii < list_LibType.length; ii++) {
+    devs = cct.devices(4, -1, 6, "LibType", list_LibType[ii]);
+    for (var i = 0; i < devs.length; i++) {
+      dev_1 = devs[i];
+      mask_check = dev_1.getAttribute("Script.Open.Dev");
+      if (mask_check !== "") {
+        status_1 = dev_1.getAttribute("Exclude");
+        status_final = status_1 === "" ? "" : "_ex";
+        LibType = dev_1.getAttribute("LibType");
+        switch (list_LibType[ii]) {
+          case "STATCOM":
+            dev_1.setAttribute("LibType_old", LibType);
+            name_dev_lib = "CER_" + dev_1.getAttribute("Name") + status_final;
+            copy_dev = dev_1.detachedType(true, true, false, true); // Get the Type (False to get the rotation by default)
+            copy_dev.name(name_dev_lib); // change the name into the name of the device
+            new_lib.saveType(copy_dev); //Save the device in the library
+            dev_1.deleteAttribute("LibType_old"); //clean the aux attribute
+            break;
+          case "synchronous machine":
+            dev_1.setAttribute("LibType_old", LibType);
+            name_dev_lib = "SG_" + dev_1.getAttribute("Name") + status_final;
+            copy_dev = dev_1.detachedType(true, true, false, true);
+            copy_dev.name(name_dev_lib);
+            new_lib.saveType(copy_dev);
+            dev_1.deleteAttribute("LibType_old");
+            break;
+          case "PV park":
+            dev_1.setAttribute("LibType_old", LibType);
+            name_dev_lib = dev_1.getAttribute("Name") + status_final;
+            copy_dev = dev_1.detachedType(true, true, false, true);
+            copy_dev.name(name_dev_lib);
+            new_lib.saveType(copy_dev);
+            dev_1.deleteAttribute("LibType_old");
+            break;
+          case "WECC PV park":
+            dev_1.setAttribute("LibType_old", LibType);
+            name_dev_lib = dev_1.getAttribute("Name") + status_final;
+            copy_dev = dev_1.detachedType(true, true, false, true);
+            copy_dev.name(name_dev_lib);
+            new_lib.saveType(copy_dev);
+            dev_1.deleteAttribute("LibType_old");
+            break;
+          case "WECC Wind park":
+            dev_1.setAttribute("LibType_old", LibType);
+            name_dev_lib = dev_1.getAttribute("Name") + status_final;
+            copy_dev = dev_1.detachedType(true, true, false, true);
+            copy_dev.name(name_dev_lib);
+            new_lib.saveType(copy_dev);
+            dev_1.deleteAttribute("LibType_old");
+            break;
+          case "WECC WP": //this is an old version, new one is WECC Wind Park
+            dev_1.setAttribute("LibType_old", LibType);
+            name_dev_lib = dev_1.getAttribute("Name") + status_final;
+            copy_dev = dev_1.detachedType(true, true, false, true);
+            copy_dev.name(name_dev_lib);
+            new_lib.saveType(copy_dev);
+            dev_1.deleteAttribute("LibType_old");
+            break;
+          case "DFIG Wind park":
+            dev_1.setAttribute("LibType_old", LibType);
+            name_dev_lib = dev_1.getAttribute("Name") + status_final;
+            copy_dev = dev_1.detachedType(true, true, false, true);
+            copy_dev.name(name_dev_lib);
+            new_lib.saveType(copy_dev);
+            dev_1.deleteAttribute("LibType_old");
+            break;
+          case "FC Wind park":
+            dev_1.setAttribute("LibType_old", LibType);
+            name_dev_lib = dev_1.getAttribute("Name") + status_final;
+            copy_dev = dev_1.detachedType(true, true, false, true);
+            copy_dev.name(name_dev_lib);
+            new_lib.saveType(copy_dev);
+            dev_1.deleteAttribute("LibType_old");
+            break;
+        }
+      }
+    }
+  }
+}
+
+function update_impedance(scr_array, s_poi, v_nom, X_R_ratio) {
+  /**
+   * Updates the impedance values of line devices in the test grid based on specified Short Circuit Ratio (SCR) values and the apparent power at the Point of Interconnection (POI).
+   * This function iterates over an array of SCR values, calculates the short circuit power, thevenin impedance, resistance, and reactance for each SCR value.
+   * It then updates these impedance values in the grid's devices.
+   * @param {Array<number>} scr_array - An array of SCR values for which the impedance values need to be updated.
+   * @param {Number} s_poi - The apparent power at the POI.
+   * @param {Number} v_nom - The nominal voltage at the point of interest.
+   * @param {Number} X_R_ratio - The ratio of reactance to resistance for the system.
+   */
+
+  var SCR, Ssc, Zth, Rth, Xth; //electrical variables
+  var dev, name_suffix, name_dev, oDevice; // dev variables
+  //* Call EMTP's console and clear it
+  c = SPRichConsole("Set impedances", "ESCR Values");
+  c.setFont("Arial Black 16 white");
+  c.activate();
+  c.clear;
+
+  for (var i = 0; i < scr_array.length; i++) {
+    SCR = scr_array[i];
+    Ssc = SCR * s_poi;
+    Zth = Math.pow(v_nom, 2) / Ssc;
+    Rth = Zth / Math.sqrt(1 + Math.pow(X_R_ratio, 2));
+    Rth = Rth.toFixed(6);
+    Xth = Math.sqrt(Math.pow(Zth, 2) - Math.pow(Rth, 2));
+    Xth = Xth.toFixed(6);
+    //*Updating values of the impedance
+    name_suffix = String(i + 1);
+    name_dev = "RL" + name_suffix;
+    dev = cct.devices(4, -1, 6, "Name", name_dev);
+    dev = dev[0];
+    oDevice = new oDevice_RLC(dev);
+    oDevice.R_A = String(Rth);
+    oDevice.L_A = String(Xth);
+    oDevice.SaveData();
+    c.writeln(
+      "For SCR = " +
+        SCR +
+        ": Resistance: " +
+        Rth +
+        " (Ohms), " +
+        "Reactance: " +
+        Xth +
+        " (Ohms)\n"
+    );
+  }
+}
+
+function update_external_grid(v_nom) {
+  /**
+   * Updates the nominal voltage settings for both the load flow bus and the voltage source device associated with an external grid in emtp.
+   * Names of "LF_external_grid" and "External_grid" must not be modified.
+   *
+   * @param {number} v_nom - The new nominal voltage value to be set for both the load flow bus device and the voltage source device associated with the external grid.
+   */
+  var cct;
+  var devLF, oDevLF; // LF dev
+  var devVS, oDevVS; // Voltage-Source dev
+  cct = currentCircuit();
+  cct = cct.findByLocator("CC");
+  //* Update LF voltage dev
+  devLF = cct.devices(4, -1, 6, "Name", "LF_external_grid")[0];
+  oDevLF = new oDevice_Load_flow_bus(devLF);
+  oDevLF.Voltage_Slack = String(v_nom);
+  oDevLF.SaveData();
+  //* Update voltage source with impedance
+  devVS = cct.devices(4, -1, 6, "Name", "External_grid")[0];
+  oDevVS = new oDevice_vsine_z(devVS);
+  oDevVS.Voltage_A = String(v_nom);
+  oDevVS.SaveData();
+}
+
+function update_lib_type(device) {
+  /**
+   * Updates the LibType attribute of a given device based on the value of its LibType_old attribute.
+   * If LibType_old is "WECC WP" (special case this is an old version), it sets LibType to "WECC Wind park"
+   * and deletes the LibType_old attribute.
+   * For any other value of LibType_old, it sets LibType to the same value as LibType_old and then deletes LibType_old.
+   * @param {Object} device - The device object whose attributes are to be updated.
+   */
+  var libTypeOld = device.getAttribute("LibType_old"); // Get the current value of the LibType_old attribute
+  if (libTypeOld == "WECC WP") {
+    device.setAttribute("LibType", "WECC Wind park");
+    device.deleteAttribute("LibType_old");
+  } else {
+    device.setAttribute("LibType", libTypeOld);
+    device.deleteAttribute("LibType_old");
+  }
+}
+
+function v_nom_checker(hv_tf) {
+  var v_nom;
+  if (hv_tf >= 195 && hv_tf <= 245) {
+    v_nom = 220;
+  } else if (hv_tf >= 93 && hv_tf <= 127) {
+    v_nom = 110;
+  } else {
+    alert("Voltage Level is not between 110 or 220. Check again.");
+    return null;
+  }
+  return v_nom;
+}
+
+function format_time(time_start, time_end) {
+  /**
+   * Formats the elapsed time between two timestamps (time_start and time_end) into a readable string.
+   * Calculates the duration between `time_start` and `time_end`, and returns it formatted as a string in hours, minutes, and seconds.
+   * If `time_start` is greater than or equal to `time_end`, it throws an error indicating that the time range is invalid.
+   *
+   * @param {number} time_start - The start timestamp in milliseconds since the Unix Epoch.
+   * @param {number} time_end - The end timestamp in milliseconds since the Unix Epoch.
+   * @returns {string} The formatted duration as a text string. The components of hours and minutes are included only if necessary.
+   *                   The resulting string is formatted as "Xh:Ym:Zs", where X, Y, and Z are hours, minutes, and seconds respectively,
+   *                   formatted to two digits if they are less than 10. If hours are 0, that component is omitted, the same for minutes
+   *                   if both hours and minutes are 0.
+   * @throws {Error} If `time_start` is greater than or equal to `time_end`, it throws an error indicating that the time range is invalid.
+   */
+  if (time_start >= time_end) {
+    throw new Error(
+      "Invalid time range: time_start must be less than time_end."
+    );
+    // O, si prefieres no lanzar un error, puedes retornar un mensaje directamente
+    // return "Invalid time range: time_start must be less than time_end.";
+  }
+  var duration = Math.round((time_end - time_start) / 1000); // convert ms to s
+
+  var hours = Math.floor(duration / 3600);
+  var minutes = Math.floor((duration % 3600) / 60);
+  var seconds = duration % 60;
+
+  function pad(number) {
+    return (number < 10 ? "0" : "") + number; //format numbers to 2 digits
+  }
+
+  var result = "";
+  if (hours > 0) {
+    result += hours + "h:";
+  }
+  if (minutes > 0 || hours > 0) {
+    result += pad(minutes) + "m:";
+  }
+  result += pad(seconds) + "s";
+
+  return result;
+}
+
+function run_load_flow(settings) {
+  /**
+   * Executes a load flow simulation based on provided settings. It configures simulation options,
+   * generates a netlist, runs the simulation, and checks for convergence.
+   *
+   * @param {Object} settings - A dictionary of simulation settings to override default configurations.
+   *                           Settings include simulation options like LoadFlow, Start_LF_from_LF, etc.
+   *                           Only specified options in 'settings' will be updated; others remain default.
+   *                           If an undefined option is passed, the simulation halts with an alert.
+   *
+   * @returns {Object} An object containing the status of the load flow simulation (true if converged, false otherwise)
+   *                   and the time taken for the simulation to execute.
+   *
+   * This function integrates several steps:
+   * 1. Parsing prerequisite script files for simulation setup.
+   * 2. Preparing the design folder and setting up the current circuit at the top level.
+   * 3. Settings simulation options from the default and 'settings' parameter.
+   * 4. Handling previous load flow result files for starting conditions.
+   * 5. Generating a netlist for the simulation.
+   * 6. Executing the load flow simulation with specified arguments.
+   * 7. Checking the simulation results for convergence and reporting the outcome.
+   */
+  parseScriptFile("simoptions/object_creator.dwj"); //simoptions //*Start Previous definitions*//
+  parseScriptFile("simoptions/open.dwj");
+  parseScriptFile("simoptions/save.dwj");
+  var cct;
+  var time_start, time_end, time_load_flow; //time definition
+  var previous_lf_file, results_lf_file, iterations; // lf results info
+  var netlist_file, str; // netlist
+  var myloc, name_program_to_run; //emtpopt search
+  var arguments; // input to run() method
+
+  cct = settings.cct; //*Extracting values from the dict of setting for the Load-Flow
+  if (cct == null) {
+    cct = currentCircuit();
+    cct = cct.findByLocator("CC"); // go to top level
+  }
+
+  prepare_design_folder(cct); //prepare design folder //*End Previous definitions*//
+  //Simulation options, some default config are used //*Start simulation option*/
+  oSimoptions = new oDevice_(cct);
+  oSimoptions.LoadFlow = "1"; // '1' when checked
+  oSimoptions.Start_LF_from_LF = "0"; //'1' when checked, starts load-flow from previous load-flow
+  // Apply configurations from dict (settings), only if the options are specified
+  for (var key in settings) {
+    if (settings.hasOwnProperty(key)) {
+      if (typeof oSimoptions[key] !== "undefined") {
+        oSimoptions[key] = settings[key]; // The option is defined, so it's updated
+      } else {
+        alert(
+          "The configuration '" +
+            key +
+            "' is not defined in the simulation options. \n\nPlease check all the configurations are well defined."
+        );
+        halt();
+      }
+    }
+  }
+  previous_lf_file = make_file_name("_lf.dat", cct); //Verify if exists a lf results file previous
+  if (previous_lf_file == null && oSimoptions.Start_LF_from_LF !== "0") {
+    var aux_window = confirm(
+      "Load-Flow previous result is not available\n\nWant to continue the calculation without this?\n\n(Otherwise you must run the Load-Flow first)"
+    );
+    if (!aux_window) {
+      halt();
+    } else {
+      oSimoptions.StartFromLoadFlow = "0";
+    }
+  } else {
+    oSimoptions.StartFromLoadFlow = "1";
+  }
+  oSimoptions.SaveData(true, true); //*End simulation option*/
+  time_start = new Date().getTime();
+  //_Update all scripted devices
+  parseScriptFile("update_variables_in_black_boxes.dwj"); //-Go
+  str = runExportToString("report scripts/EMTP Netlist.rfm", null, "NETLIST"); //create the netlist //*Start Run time-domain*/
+  netlist_file = Netlist_file_name(); //the file must exist
+  // search the folder of the program to run
+  myloc = SPFile();
+  myloc.setAppPath("EMTP\\emtpopt.exe");
+  name_program_to_run = myloc.fullName;
+  // define arguments to be used
+  var arguments = '"' + getAppDataDir() + "\\" + 'emtpstate.ini";' + ";";
+  arguments = arguments + '"' + netlist_file + '"' + ";0;"; //0 in the end = no console display
+  run(name_program_to_run, arguments, "", -1); //more info about run available in SPScriptfile //*End Run time-domain*/
+  time_end = new Date().getTime();
+  load_flow_status = error_checker(cct, "Load-Flow");
+  time_load_flow = format_time(time_start, time_end);
+  writeln(
+    "- Load flow simulation command executed (duration: " +
+      time_load_flow +
+      ")\n" +
+      "- Status: " +
+      load_flow_status
+  );
+  results_lf_file = make_file_name("_lf.dat", cct); //Verify if the load-flow simulation converged //*FINAL//
+  if (results_lf_file == null) {
+    return { status: load_flow_status, time: time_load_flow, iterations: null };
+  } else {
+    iterations = get_iterations_of_lf(cct);
+    return {
+      status: load_flow_status,
+      time: time_load_flow,
+      iterations: iterations
+    }; //status true means converge
+  }
+}
+
+function get_iterations_of_lf(cct) {
+  /**
+   * Reads an HTML file to find and return the total number of iterations.
+   * If the total number of iterations cannot be found, returns an alert message.
+   *
+   * @param {Object} cct - Object containing circuit attributes including path and name.
+   * @returns {String} The total number of iterations found in the file or an alert message if not found.
+   */
+  var cct = currentCircuit();
+  cct = cct.findByLocator("CC"); // go to top level
+  var designFileName =
+    cct.getAttribute("CctPath") + cct.getAttribute("CctName");
+  // Extract the file name without extension but keep the full path
+  designFileName = designFileName.substring(0, designFileName.length - 4);
+
+  var ecfName = cct
+    .getAttribute("CctName")
+    .substring(0, cct.getAttribute("CctName").length - 4);
+  var projectDir = designFileName + "_pj/";
+
+  var fid = SPFile(projectDir + ecfName + ".html");
+
+  if (fid.openRead()) {
+    var content = fid.readText(); // Reads the contents of the file and returns a string
+    fid.close();
+
+    var regex = /Total number of iterations:\s*(\d+)/;
+    var matches = content.match(regex);
+
+    if (matches && matches.length > 1) {
+      return matches[1]; // The number of iterations is in matches[1]
+    } else {
+      return "Total number of iterations not found.";
+    }
+  } else {
+    return "Failed to open file.";
+  }
+}
+
+function run_time_domain(settings, delete_previous_sim) {
+  /**
+   * Executes a time domain simulation based on provided settings and optionally
+   * starts from results of a previous load flow simulation.
+   *
+   * @param {Object} settings - A dictionary of simulation settings to override default configurations.
+   *                           Settings include options like LoadFlow, StartFromLoadFlow, steadystate, timedomain, etc.
+   *                           Only specified options in 'settings' will be updated; others remain default.
+   *                           If an undefined option is passed, the simulation halts with an alert.
+   *
+   * @returns {Object} An object containing the time taken for the simulation to execute and the status of the time domain simulation.
+   *
+   * This function performs the following steps:
+   * 1. Parsing prerequisite script files for simulation setup.
+   * 2. Preparing the design folder and setting up the current circuit at the top level.
+   * 3. Configuring simulation options from the default and 'settings' parameter.
+   * 4. Verifying if the load flow simulation converged and using its results for the time-domain simulation if available.
+   * 5. Generating a netlist for the simulation.
+   * 6. Executing the time domain simulation with specified arguments.
+   * 7. Reporting the execution time of the time domain simulation.
+   */
+  //TODO add the config for only take values in some intervals
+  parseScriptFile("simoptions/object_creator.dwj"); //simoptions //*Start Previous definitions*//
+  parseScriptFile("simoptions/open.dwj");
+  parseScriptFile("simoptions/save.dwj");
+  var cct;
+  var time_start, time_end, time_dynamic, time_domain_status; //time definition
+  var netlist_file, str; // netlist
+  var myloc, name_program_to_run; //emtpopt search
+  var arguments; // input to run() method
+  cct = settings.cct; //*Extracting values from the dict of setting for the Time-Domain
+  if (cct == null) {
+    cct = currentCircuit();
+    cct = cct.findByLocator("CC"); // go to top level
+  }
+  prepare_design_folder(cct); //prepare design folder
+  if (delete_previous_sim) {
+    delete_plot_files(false);
+  } //*End Previous definitions*//
+
+  //Simulation options, some default config are used //*Start simulation option*/
+  oSimoptions = new oDevice_(cct);
+  oSimoptions.LoadFlow = "0"; // '1' when checked
+  oSimoptions.StartFromLoadFlow = "1"; // '1' when checked, starts the steady-state from load-flow
+  oSimoptions.steadystate = "1"; // '1' when checked
+  oSimoptions.timedomain = "1"; // '1' when checked
+  oSimoptions.Dt = "50";
+  oSimoptions.Dtu = "us";
+  oSimoptions.tmax = "10";
+  oSimoptions.tmaxu = "";
+  oSimoptions.fscan = "";
+  // Apply configurations from dict (settings), only if the options are specified
+  for (var key in settings) {
+    if (settings.hasOwnProperty(key)) {
+      if (typeof oSimoptions[key] !== "undefined") {
+        oSimoptions[key] = settings[key]; // The option is defined, so it's updated
+      } else {
+        alert(
+          "The configuration '" +
+            key +
+            "' is not defined in the simulation options. \n\nPlease check all the configurations are well defined."
+        );
+        halt();
+      }
+    }
+  }
+  load_flow_data_file = make_file_name("_lf.dat", cct); //Verify if the load-flow simulation converged and is available to be use in time-domain
+  if (load_flow_data_file == null && oSimoptions.StartFromLoadFlow !== "0") {
+    var aux_window = confirm(
+      "Load-Flow result is not available\n\nWant to continue the simulation without the Load-Flow?\n\n(Otherwise you must run the Load-Flow first)"
+    );
+    if (!aux_window) {
+      halt();
+    } else {
+      oSimoptions.StartFromLoadFlow = "0";
+    }
+  } else {
+    oSimoptions.StartFromLoadFlow = "1";
+  }
+  oSimoptions.SaveData(true, true); //*End simulation option*/
+  time_start = new Date().getTime();
+  //_Update all scripted devices
+  parseScriptFile("update_variables_in_black_boxes.dwj"); //-Go
+  str = runExportToString("report scripts/EMTP Netlist.rfm", null, "NETLIST"); //create the netlist //*Start Run time-domain*/
+  netlist_file = Netlist_file_name(); //the file must exist
+  // search the folder of the program to run
+  myloc = SPFile();
+  myloc.setAppPath("EMTP\\emtpopt.exe");
+  name_program_to_run = myloc.fullName;
+  // define arguments to be used
+  var arguments = '"' + getAppDataDir() + "\\" + 'emtpstate.ini";' + ";";
+  arguments = arguments + '"' + netlist_file + '"' + ";0;"; //0 in the end = no console display
+  run(name_program_to_run, arguments, "", -1); //more info about run available in Javadoc //*End Run time-domain*/
+  time_end = new Date().getTime();
+  time_domain_status = error_checker(cct, "Time-Domain");
+  time_dynamic = format_time(time_start, time_end);
+  writeln(
+    "- Dynamic simulation command executed (duration: " +
+      time_dynamic +
+      ")\n" +
+      "- Status: " +
+      time_domain_status
+  );
+
+  return { time: time_dynamic, status: time_domain_status };
+}
+
+function error_checker(cct, type) {
+  /**
+   * Reads the content of a specified output file and extracts error messages.
+   * @param {Object} cct - An object containing attributes to construct the file path.
+   * @returns {String|null} The extracted error message or null if no error message is found.
+   */
+  var cct = currentCircuit();
+  cct = cct.findByLocator("CC"); // go to top level
+  var designFileName =
+    cct.getAttribute("CctPath") + cct.getAttribute("CctName");
+  designFileName = designFileName.substring(0, designFileName.length - 4); // Extract the file name without extension but keep the full path
+
+  var ecfName = cct
+    .getAttribute("CctName")
+    .substring(0, cct.getAttribute("CctName").length - 4);
+  var projectDir = designFileName + "_pj/";
+
+  var fid = SPFile(projectDir + ecfName + ".out");
+
+  if (type == "Time-Domain") {
+    if (fid.openRead()) {
+      var content = fid.readText(); // Reads the contents of the file and returns a string
+      fid.close();
+      var regex = /!!Error, device:([\s\S]*?)!!Critical error, must stop/; // Use a regular expression to find text between specific error patterns.
+      var match = content.match(regex);
+
+      // If a match is found, return the captured text (excluding the error delimiters)
+      // Otherwise, return null.
+      if (match && match.length > 1) {
+        return match[1]; // Use trim() to remove extra whitespace at the start and end
+      }
+    } else {
+      return null;
+    }
+  } else if (type == "Load-Flow") {
+    if (fid.openRead()) {
+      var content = fid.readText(); // Reads the contents of the file and returns a string
+      fid.close();
+      var regex =
+        /!!Error, device:([\s\S]*?)!!Error, the Load-Flow solution method did not converge./; // Use a regular expression to find text between specific error patterns.
+      var match = content.match(regex);
+
+      // If a match is found, return the captured text (excluding the error delimiters)
+      // Otherwise, return null.
+      if (match && match.length > 1) {
+        return match; // Use trim() to remove extra whitespace at the start and end
+      }
+    } else {
+      return null;
+    }
+  }
+}
+
+function clean_project_folder(My_cct) {
+  /**
+   * Deletes all previous simulation files related to a given circuit. If no circuit is provided,
+   * the function defaults to the current circuit in the top-level design.
+   *
+   * This function performs the following actions:
+   * 1. Determines the circuit to be used, defaulting to the current top-level circuit if no argument is provided.
+   * 2. Retrieves the path and name of the design file associated with the circuit.
+   * 3. Constructs the project directory name based on the design file's name and deletes this directory.
+   * 4. Deletes all .net files associated with the design, which are simulation files.
+   *
+   * @param {Object} My_cct - (Optional) The circuit object from which previous simulation files will be deleted.
+   *                          If not provided, the function operates on the current top-level circuit.
+   *
+   * Note: This function assumes the design file has a ".ecf" extension and the project directory is named
+   *       with "_pj" suffix. It uses these conventions to locate and delete the files.
+   */
+  if (clean_project_folder.arguments.length == 0) {
+    var cct = currentCircuit();
+    cct = cct.findByLocator("CC"); //Move to top circuit
+  } else {
+    var cct = My_cct;
+  }
+
+  if (cct == null) halt();
+  //*Find the path name of this design
+  var designfilepath = cct.getAttribute("CctPath");
+  if (designfilepath.length == 0) {
+    return null;
+  }
+  var designfilename =
+    cct.getAttribute("CctPath") + cct.getAttribute("CctName"); //has .ecf extension
+  //*extract the file name without extension but keep the full path
+  designfilename = designfilename.substring(0, designfilename.length - 4);
+  var project_directory = designfilename + "_pj";
+  var design_path = cct.getAttribute("CctPath");
+
+  deleteDirectory(project_directory);
+  deleteFiles(design_path + "*.net");
+  deleteFiles(design_path + "config_mplot.txt");
+}
+
+function get_results(settings) {
+  /**
+   * Executes the MPLOT process with specified settings to get the time series
+   * in .mat format.
+   *
+   * @param {Object} settings A setting of object containing:
+   *   - meter_list: An array of strings representing meter identifiers to be included in the analysis.
+   *   - output_file_name: The name of the output file, including the .mat extension.
+   *   - type: The type of analysis to perform, e.g., 'SAVEMAT' for MATLAB file output.
+   *
+   * Note: The function halts execution with an alert if the MPLOT button is not present
+   * or if it fails to create the necessary configuration file for MPLOT.
+   */
+
+  parseScriptFile("mplot_m.dwj");
+  var cct, deviceMplot;
+  var input_file, txt_file, m_data_file, file_data; //files managment
+  var meter_list, num_of_meters; //meters
+  var meter_list = settings.meter_list; //*Extracting values from the dict to settings mplot
+  var output_file_name = settings.output_file_name;
+  var type = settings.type;
+  cct = settings.cct; //*Extracting values from the dict of setting for the Time-Domain
+  if (cct == null) {
+    cct = currentCircuit();
+    cct = cct.findByLocator("CC"); // go to top level
+  }
+  //* Start Mplot settings //
+  deviceMplot = cct.devices("Script.Open.Dev", "mplot_i.dwj"); //find the object whose attribute Script.Open.Dev is mplot_i.dwj
+  if (deviceMplot == null || deviceMplot.length == 0) {
+    //TODO ADD MPLOT BUTTON AUTOMATICALLY
+    alert("Error : MPLOT button must be on the design");
+    halt();
+  }
+  deviceMplot = deviceMplot[0];
+  oMplot = new oDevice_mplot(deviceMplot); //mplot_i.dwj for more info
+  //* End Mplot settings //
+  //* Start Create Data to settings_mplot file //
+  m_data_file = make_Newfile_name("m.m"); //m data file path
+  num_of_meters = meter_list.length; //number of scopes to include in the .mat file
+  file_data = "";
+  file_data +=
+    "%Identity the files\n" +
+    "Waitbar=0; %turn off waitbar when loading this data\n\n" +
+    "%Get the time series in .mat format\n";
+  file_data += "PlotCase{1}.type=" + type + ";\n"; //'SAVEMAT' to save in .mat format
+  file_data += "PlotCase{1}.filename='" + output_file_name + "';\n"; //file name must include .mat extension
+  file_data += "filn{1}='" + m_data_file + "';\n"; //path of the .m file
+  for (var imeter = 0; imeter < num_of_meters; imeter++) {
+    file_data +=
+      "PlotCase{1}.var_y{" + (imeter + 1) + "}='" + meter_list[imeter] + "';\n";
+  }
+  input_file = "settings_mplot.txt"; // file of settings mplot
+  input_file = check_my_filename(input_file); //set input_file path, i.e : design path
+  txt_file = SPFile(input_file); // object of file
+  if (txt_file.openCreate()) {
+    txt_file.write(file_data);
+    txt_file.close(); //create, write and save the settings_mplot.txt file
+  } else {
+    alert("Error : impossible to create mPlot settings data file");
+    halt();
+  }
+  //* End Create Data to settings_mplot file //
+  oMplot.ExtraTags = "0"; // Mplot default settingss
+  oMplot.BaseCaseCheck = "0";
+  oMplot.ExtraFiles = "1";
+  oMplot.Files = input_file; //assign the file with the settings to mPlot
+  oMplot.waitmode = -1; //wait till MPLOT ends, attention in this example it means after closing data
+  oMplot.run();
+}
+
+//TODO Add more settings for LF, Time-Domain, Mplot (maybe others).
+function run_models_from_library(settings) {
+  parseScriptFile("machine_sm_m.dwj"); // SG machine
+  parseScriptFile("PVPark_m.dwj"); // PV park standard
+  parseScriptFile("WECC_PVPark_m.dwj"); //WECC PV Park
+  parseScriptFile("WECC_WP_m.dwj"); // WECC Wind Park
+  parseScriptFile("WP_DFIG_m.dwj"); // DFIG Wind Park
+  parseScriptFile("WP_FC_m.dwj"); // FC Wind Park
+  parseScriptFile("rlc_m.dwj"); // rlc_info (to modify impedance)
+  parseScriptFile("trs3_m.dwj"); // general transformer
+  parseScriptFile("load_flow_bus_m.dwj"); //lf dev
+  parseScriptFile("vsine_m.dwj"); //voltage source with impedance
+  //* Variables definitions //
+  var path = settings.path; // base directory to save the models
+  var lib_path = settings.lib_path;
+  var lib_name = settings.lib_name;
+  var scr_array = settings.scr_array;
+  var X_R_ratio = settings.X_R_ratio;
+  var list_LibType = settings.list_LibType;
+  var cct, cct_2, cct_aux, lib_elements; //general variables
+  var new_dev, new_dev_pin, signal_dev, new_dev_2; //dev variables
+  var dev_switch, k_pin, sum_pos_dev_x, sum_pos_dev_y, pos_x, pos_y; //auxiliar switch variables
+  var path, new_path, path_to_save; // path variables
+  var lib_full_name, lib_with_models, lib_elements, lib_title, list_LibType; //library vars
+  var oDevSG, devTF, oDevTF; //variables to access object oriented methods
+  var hv_tf; // hv value in the tf (for checking v_nom value)
+  var v_nom, s_poi; //v_nom value in the POI, Apparent Power in the POI
+
+  cct = currentCircuit();
+  dev_switch = cct.devices("Name", "reference_switch")[0]; // switch to connect the new device
+  k_pin = dev_switch.pins()[0]; //pin of the switch to connect
+
+  //* fixed values for position
+  sum_pos_dev_x = 3000;
+  sum_pos_dev_y = 550;
+
+  pos_x = k_pin.posX - sum_pos_dev_x;
+  pos_y = k_pin.posY - sum_pos_dev_y;
+
+  lib_full_name = lib_path + lib_name;
+  lib_with_models = DWLibrary(lib_name); //create the object DWlibrary
+  lib_with_models.open(lib_full_name); //open the library with a full path
+  lib_elements = lib_with_models.typeList; //get a list with the type of models
+  lib_title = lib_with_models.title;
+
+  for (var xx = 0; xx < lib_elements.length; xx++) {
+    //* Add the new device and connect to the test grid
+    cct = currentCircuit();
+    new_dev = cct.addDevice(lib_full_name, lib_elements[xx], pos_x, pos_y); // add device
+    new_dev.setAttribute("Name", lib_elements[xx]); //change the device name
+    update_lib_type(new_dev);
+    name_new_dev = new_dev.getAttribute("Name");
+    new_dev_pin = new_dev.pins()[0]; // get the first pin
+    k_pin.connectTo(new_dev_pin, true); // connect device
+    //* saving this model
+    cct_aux = currentCircuit(); // extra auxiliar circuit to save
+    new_path = SPFile();
+    new_path.fullName = path + "\\" + name_new_dev + "_" + lib_title;
+    if (new_path.exists == false) {
+      path_to_save = new_path + "\\" + name_new_dev + "_" + lib_title + ".ecf";
+      path_to_save = SPFile(path_to_save).create();
+    }
+    // * if the dev dont have a mask push into the subcircuit
+    if (new_dev.getAttribute("Script.Open.Dev") == "") {
+      cct_2 = new_dev.subCircuit;
+      for (var ii = 0; ii < list_LibType.length; ii++) {
+        new_dev_2 = cct_2.devices(4, -1, 4, "LibType", list_LibType[ii])[0]; //search for the dev
+        if (new_dev_2 != null) {
+          update_lib_type(new_dev_2);
+          var LibType_2 = new_dev_2.getAttribute("LibType");
+          switch (LibType_2) {
+            case "synchronous machine":
+              var oDevSG = new oDevice_SM(new_dev_2);
+              var devTF = cct_2.devices(
+                4,
+                -1,
+                4,
+                "LibName",
+                "transformers.clf"
+              ); //select the TF in the page
+              var oDevTF = new oDevice_yy(devTF[0]); //open the TF in the page
+              var hv_tf = oDevTF.V1;
+              v_nom = v_nom_checker(hv_tf);
+              s_poi = oDevSG.Rating_S;
+              update_external_grid(v_nom);
+              update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+              break;
+            case "WECC PV park":
+              var oDevWECC_PV = new oDevice_WECC_PV(new_dev_2);
+              Ngen = Number(oDevWECC_PV.Parameters.Ngen);
+              Sgen = Number(oDevWECC_PV.Parameters.Sgen);
+              hv_tf = oDevWECC_PV.Parameters.V2_WP;
+              s_poi = Sgen * Ngen;
+              v_nom = v_nom_checker(hv_tf);
+              update_external_grid(v_nom);
+              update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+              break;
+            case "PV park":
+              var oDevStd_PV = new oDevice_PV(new_dev_2);
+              Ngen = Number(oDevStd_PV.Parameters.Ngen);
+              Sgen = Number(oDevStd_PV.Parameters.Sgen);
+              hv_tf = oDevStd_PV.Parameters.V2_WP;
+              s_poi = Sgen * Ngen;
+              v_nom = v_nom_checker(hv_tf);
+              update_external_grid(v_nom);
+              update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+              break;
+            case "WECC Wind park":
+              var oDevWECC_WP = new oDevice_WECC_WP(new_dev_2);
+              Ngen = Number(oDevWECC_WP.Parameters.Ngen);
+              Sgen = Number(oDevWECC_WP.Parameters.Sgen);
+              hv_tf = oDevWECC_WP.Parameters.V2_WP;
+              s_poi = Sgen * Ngen;
+              v_nom = v_nom_checker(hv_tf);
+              update_external_grid(v_nom);
+              update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+              break;
+            case "DFIG Wind park":
+              var oDevWP_DFIG = new oDevice_WP_DFIG(new_dev_2);
+              Ngen = Number(oDevWP_DFIG.Parameters.Ngen);
+              Sgen = Number(oDevWP_DFIG.Parameters.Sgen);
+              hv_tf = oDevWP_DFIG.Parameters.V2_WP;
+              s_poi = Sgen * Ngen;
+              v_nom = v_nom_checker(hv_tf);
+              update_external_grid(v_nom);
+              update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+              break;
+            case "FC Wind park":
+              var oDevWP_FC = new oDevice_WP_FC(new_dev_2);
+              Ngen = Number(oDevWP_FC.Parameters.Ngen);
+              Sgen = Number(oDevWP_FC.Parameters.Sgen);
+              hv_tf = oDevWP_FC.Parameters.V2_WP;
+              s_poi = Sgen * Ngen;
+              v_nom = v_nom_checker(hv_tf);
+              update_external_grid(v_nom);
+              update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+              break;
+          }
+          break;
+        }
+      }
+    } else {
+      update_lib_type(new_dev);
+      LibType = new_dev.getAttribute("LibType");
+      switch (LibType) {
+        case "synchronous machine":
+          var oDevSG = new oDevice_SM(new_dev);
+          var devTF = cct_2.devices(4, -1, 4, "LibName", "transformers.clf"); //select the TF in the page
+          var oDevTF = new oDevice_yy(devTF[0]); //open the TF in the page
+          var hv_tf = oDevTF.V1;
+          v_nom = v_nom_checker(hv_tf);
+          s_poi = oDevSG.Rating_S;
+          update_external_grid(v_nom);
+          update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+          break;
+        case "WECC PV park":
+          var oDevWECC_PV = new oDevice_WECC_PV(new_dev);
+          Ngen = Number(oDevStd_PV.Parameters.Ngen);
+          Sgen = Number(oDevStd_PV.Parameters.Sgen);
+          hv_tf = oDevStd_PV.Parameters.V2_WP;
+          s_poi = Sgen * Ngen;
+          v_nom = v_nom_checker(hv_tf);
+          update_external_grid(v_nom);
+          update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+          break;
+        case "PV park":
+          var oDevStd_PV = new oDevice_PV(new_dev);
+          Ngen = Number(oDevStd_PV.Parameters.Ngen);
+          Sgen = Number(oDevStd_PV.Parameters.Sgen);
+          hv_tf = oDevStd_PV.Parameters.V2_WP;
+          s_poi = Sgen * Ngen;
+          v_nom = v_nom_checker(hv_tf);
+          update_external_grid(v_nom);
+          update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+          break;
+        case "WECC Wind park":
+          var oDevWECC_WP = new oDevice_WECC_WP(new_dev);
+          Ngen = Number(oDevWECC_WP.Parameters.Ngen);
+          Sgen = Number(oDevWECC_WP.Parameters.Sgen);
+          hv_tf = oDevWECC_WP.Parameters.V2_WP;
+          s_poi = Sgen * Ngen;
+          v_nom = v_nom_checker(hv_tf);
+          update_external_grid(v_nom);
+          update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+          break;
+        case "WECC WP": // old version
+          var oDevWECC_WP = new oDevice_WECC_WP(new_dev);
+          Ngen = Number(oDevWECC_WP.Parameters.Ngen);
+          Sgen = Number(oDevWECC_WP.Parameters.Sgen);
+          hv_tf = oDevWECC_WP.Parameters.V2_WP;
+          s_poi = Sgen * Ngen;
+          v_nom = v_nom_checker(hv_tf);
+          update_external_grid(v_nom);
+          update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+          break;
+        case "DFIG Wind park":
+          var oDevWP_DFIG = new oDevice_WP_DFIG(new_dev);
+          Ngen = Number(oDevWP_DFIG.Parameters.Ngen);
+          Sgen = Number(oDevWP_DFIG.Parameters.Sgen);
+          hv_tf = oDevWP_DFIG.Parameters.V2_WP;
+          s_poi = Sgen * Ngen;
+          v_nom = v_nom_checker(hv_tf);
+          update_external_grid(v_nom);
+          update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+          break;
+        case "FC Wind park":
+          var oDevWP_FC = new oDevice_WP_FC(new_dev);
+          Ngen = Number(oDevWP_FC.Parameters.Ngen);
+          Sgen = Number(oDevWP_FC.Parameters.Sgen);
+          hv_tf = oDevWP_FC.Parameters.V2_WP;
+          s_poi = Sgen * Ngen;
+          v_nom = v_nom_checker(hv_tf);
+          update_external_grid(v_nom);
+          update_impedance(scr_array, s_poi, v_nom, X_R_ratio);
+          break;
+      }
+    }
+    path_to_save = new_path + "\\" + name_new_dev + "_" + lib_title + ".ecf";
+    cct_aux.save();
+    cct_aux.saveCopy(path_to_save);
+    //* START dynamic simulation //
+    var design = openDesign(path_to_save, 1); //model of interest
+    var settings_lf = {
+      cct: design
+    };
+    var load_flow = run_load_flow(settings_lf);
+    var settings_time_domain = {
+      cct: design,
+      tmax: 3,
+      Dt: 50,
+      Dtu: "us",
+      StartFromLoadFlow: "1"
+    };
+    var emt_sim = run_time_domain(settings_time_domain, false);
+    var scopes_list = [
+      "PQm1/P@control@1",
+      "PQm1/Q@control@1",
+      "Vrms_filt@control@1",
+      "freq@control@1"
+    ];
+    var settings_mplot = {
+      cct: design,
+      meter_list: scopes_list,
+      output_file_name: name_new_dev + "_" + lib_title + ".mat",
+      type: "'SAVEMAT'"
+    };
+    get_results(settings_mplot);
+    design.save();
+    design.close();
+    //* END dynamic simulation //
+    //* clean the connection
+    signal_dev = new_dev_pin.signal(); // disconnect device
+    signal_dev.remove();
+    new_dev.remove(); // delete the device
+  }
+
+  lib_with_models.close();
+}
+
+function arange(start, stop, step) {
+  /**
+   * Generates an array of numbers within a specified range, including the end value.
+   *
+   * @param {number} start - The starting value of the sequence.
+   * @param {number} stop - The end value of the sequence (included).
+   * @param {number} [step=1] - The step between each number in the sequence.
+   * @returns {Array} - An array containing the generated sequence of numbers.
+   */
+  var result = [];
+  var current = start;
+
+  step = step || 1; // Default step is 1 if not provided
+
+  if (step > 0) {
+    while (current <= stop) {
+      // Include stop in the range
+      result.push(current);
+      current += step;
+    }
+  } else if (step < 0) {
+    while (current >= stop) {
+      // Include stop in the range
+      result.push(current);
+      current += step;
+    }
+  }
+
+  return result;
+}
+
+// TODO cambiar de consola donde quiero escribir
+// TODO trackeo de tiempo para loops

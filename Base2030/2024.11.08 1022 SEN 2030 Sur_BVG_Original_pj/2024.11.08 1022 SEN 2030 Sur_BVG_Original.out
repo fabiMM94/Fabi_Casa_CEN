@@ -1,0 +1,21 @@
+->Created output file: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2030\2024.11.08 1022 SEN 2030 Sur_BVG_Original_pj\2024.11.08 1022 SEN 2030 Sur_BVG_Original.out
+->Created output file: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2030\2024.11.08 1022 SEN 2030 Sur_BVG_Original_pj\2024.11.08 1022 SEN 2030 Sur_BVG_Original.html
+->START Reading input data
+Circuit Diagram: Circuit.Diagram=2024.11.08 1022 SEN 2030 Sur_BVG_Original.ecf
+Circuit date: 14/11/2024 11:30:06
+->END Reading input data
+->EMTP version 4.4 started
+->Simulation date: 24/11/14
+->Simulation time: 12:45:49.046
+Input Netlist file, EMTP format: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2030\2024.11.08 1022 SEN 2030 Sur_BVG_Original.net
+->Number of data lines: 73001
+->Start Load-Flow
+->Loaded previously calculated Load-Flow data<---
+->End Load-Flow
+
+->START simulation statistics
+
+->END simulation statistics
+EMTP terminated
+Date: 24/11/14
+Time: 12:45:50.107
