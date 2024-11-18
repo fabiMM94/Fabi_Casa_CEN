@@ -1,0 +1,5 @@
+Name1,LibType,Status1,StatusFinal
+BESS_La_Cabana,AC-DC converter with control,1,1
+BESS_La_Cabana_Amp,AC-DC converter with control,1,1
+STATCOM_MAIPO,STATCOM,1,1
+STAT_ENTRERIOS,STATCOM,1,1

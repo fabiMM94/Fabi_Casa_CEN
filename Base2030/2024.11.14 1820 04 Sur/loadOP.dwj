@@ -1,0 +1,31 @@
+var base_path =
+  // "C:\\Users\\matias.aguero\\OneDrive - Coordinador El\u00e9ctrico Nacional\\";
+  "";
+
+var emtp_cen_path =
+  // "Github\\emtp_cen\\emtp_cen.dwj";
+  "C:\\Users\\mati1\\Documents\\Github\\emtp_cen\\emtp_cen.dwj";
+// "C:\\Users\\matias.aguero\\Documents\\Github\\emtp_cen\\emtp_cen.dwj";
+
+var full_emtp_cen_path = base_path + emtp_cen_path;
+parseScriptFile(full_emtp_cen_path);
+
+var pathData = cct.fileDir();
+
+var dataPV = pathData + "Operation Point\\Paso 1\\op_PV.csv";
+// var dataWP = pathData + "Operation Point\\Paso 1\\op_WP.csv";
+var dataLoadLF = pathData + "Operation Point\\Paso 1\\op_loadLF.csv";
+
+// ########################################################################
+
+//* Cargar punto de operación de PV
+loadOperationPoint(dataPV, 0);
+
+// //* Cargar punto de operación de WP
+// loadOperationPoint(dataWP, 5);
+
+//* Cargar punto de operación de LoadLF
+loadOperationPoint(dataLoadLF, 2);
+
+// //* Cargar punto de operación de LF
+// loadOperationPoint(dataLF, 10);

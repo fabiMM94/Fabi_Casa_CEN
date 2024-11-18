@@ -18,7 +18,7 @@ var pathData = //'C:\\Users\\benjamin.vega\\Documents\\GitHub\\GFM_SEN\\Extracci
 var cct = currentCircuit;
 
 //  ---------------------------------- SACANDO DATOS------------------------------------------------------------------------
-
+/*
 // //* Saca todos los datos de los PV parks
 var data_PV = gridAllData("PV");
 outputFile(data_PV, "data_PV_", pathData);
@@ -59,22 +59,21 @@ ucData(pathData, "PV");
 // //* Saca el predespacho de los WP
 ucData(pathData, "WP");
 
-
+*/
 //-------------- Referencias--------------------------------------------------------------------------------------------------------
 
 
 
-/*
-dataPV = "op_PV2.csv"
-dataWP ="op_WP2.csv"
-dataLoadLF ="op_loadLF2.csv"
+
+dataPV = "op_PV3.csv"
+dataWP ="op_WP3.csv"
+//dataLoadLF ="op_loadLF2.csv"
 // arma el punto de operación como input en JS y luego carga los nuevos puntos de operación en EMTP
 loadOperationPoint(dataPV, 0);
 loadOperationPoint(dataWP, 5);
 // * Cargar punto de operación de LoadLF
-loadOperationPoint(dataLoadLF, 2);
+//loadOperationPoint(dataLoadLF, 2);
 
-*/
 
 
 

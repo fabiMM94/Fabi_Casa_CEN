@@ -1,0 +1,31 @@
+->Created output file: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2030\2024.11.14 1820 04 Sur\2024.11.14 1820 SEN 2030 Sur_pj\2024.11.14 1820 SEN 2030 Sur.out
+->Created output file: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2030\2024.11.14 1820 04 Sur\2024.11.14 1820 SEN 2030 Sur_pj\2024.11.14 1820 SEN 2030 Sur.html
+->START Reading input data
+Circuit Diagram: Circuit.Diagram=2024.11.14 1820 SEN 2030 Sur.ecf
+Circuit date: 15/11/2024 18:45:42
+->END Reading input data
+->EMTP version 4.4 started
+->Simulation date: 24/11/15
+->Simulation time: 10:27:59.967
+Input Netlist file, EMTP format: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2030\2024.11.14 1820 04 Sur\2024.11.14 1820 SEN 2030 Sur.net
+->Number of data lines: 73007
+->Start Load-Flow
+Current subcircuit chain:
+Central_Canutillar/Canutillar_U1/                                                                                                                                                                                                                                                                                                                                                                                         
+!!Error, device: Central_Canutillar/Canutillar_U1/LF_CANU_U1
+This PV bus reactive power (Q) is at its limit.
+PV constraint changed to PQ constraint.
+Current subcircuit chain:
+Central_Canutillar/Canutillar_U2/                                                                                                                                                                                                                                                                                                                                                                                         
+!!Error, device: Central_Canutillar/Canutillar_U2/LF_CANU_U2
+This PV bus reactive power (Q) is at its limit.
+PV constraint changed to PQ constraint.
+->Loaded previously calculated Load-Flow data<---
+->End Load-Flow
+
+->START simulation statistics
+
+->END simulation statistics
+EMTP terminated
+Date: 24/11/15
+Time: 10:28:00.980

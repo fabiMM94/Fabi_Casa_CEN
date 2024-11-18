@@ -1,0 +1,31 @@
+var base_path =
+  // "C:\\Users\\matias.aguero\\OneDrive - Coordinador El\u00e9ctrico Nacional\\";
+  "";
+// var emtp_cen_path = "Github\\emtp_cen\\emtp_cen.dwj";
+var emtp_cen_path =
+  "C:\\Users\\matias.aguero\\Documents\\Github\\emtp_cen\\emtp_cen.dwj";
+
+var full_emtp_cen_path = base_path + emtp_cen_path;
+parseScriptFile(full_emtp_cen_path);
+
+var cct = currentCircuit;
+
+// "C:\\Users\\matias.aguero\\Coordinador El\u00e9ctrico Nacional\\DLAB - Fortaleza de Red - Estudio 2024\\02. An\u00e1lisis de antecedentes\\Modelo EMTP SEN\\Red 2030 (con HVDC)\\";
+// "C:\\Users\\mati1\\Downloads\\";
+var prefix_data_path = cct.fileDir;
+var pathData = prefix_data_path + "Datos";
+
+//* Saca todas las cargas con LF de la primera capa
+var data_loadLF = gridAllData(2);
+outputFile(data_loadLF, "data_loadLF_", pathData);
+
+//* Saca todos los datos de los PV parks
+var data_PV = gridAllData(0);
+outputFile(data_PV, "data_PV_", pathData);
+
+//* Saca todos los datos de los Wind parks
+var data_WP = gridAllData(5);
+outputFile(data_WP, "data_WP_", pathData);
+
+//* Saca el predespacho de SG,PV,WP, y Reactive compensator
+ucData(pathData);
