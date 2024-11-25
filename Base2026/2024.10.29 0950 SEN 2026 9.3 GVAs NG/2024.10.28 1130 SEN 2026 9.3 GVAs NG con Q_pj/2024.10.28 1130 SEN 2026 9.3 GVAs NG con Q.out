@@ -1,0 +1,27 @@
+->Created output file: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2026\2024.10.29 0950 SEN 2026 9.3 GVAs NG\2024.10.28 1130 SEN 2026 9.3 GVAs NG con Q_pj\2024.10.28 1130 SEN 2026 9.3 GVAs NG con Q.out
+->Created output file: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2026\2024.10.29 0950 SEN 2026 9.3 GVAs NG\2024.10.28 1130 SEN 2026 9.3 GVAs NG con Q_pj\2024.10.28 1130 SEN 2026 9.3 GVAs NG con Q.html
+->START Reading input data
+Circuit Diagram: Circuit.Diagram=2024.10.28 1130 SEN 2026 9.3 GVAs NG con Q.ecf
+Circuit date: 21/11/2024 22:36:43
+->END Reading input data
+->EMTP version 4.4 started
+->Simulation date: 24/11/21
+->Simulation time: 11:43:12.384
+Input Netlist file, EMTP format: C:\Users\fabian.medina\OneDrive - Coordinador Eléctrico Nacional\Escritorio\CEN_Fabian\Codigos\Fabi_Casa_CEN\Base2026\2024.10.29 0950 SEN 2026 9.3 GVAs NG\2024.10.28 1130 SEN 2026 9.3 GVAs NG con Q.net
+->Number of data lines: 404505
+!!Error, device: SW36a
+This switch type device is shorted (same signal names at both ends) and must remain open in this simulation.
+!!Error, device: SW36b
+This switch type device is shorted (same signal names at both ends) and must remain open in this simulation.
+!!Error, device: SW36c
+This switch type device is shorted (same signal names at both ends) and must remain open in this simulation.
+->Start Load-Flow
+->Loaded previously calculated Load-Flow data<---
+->End Load-Flow
+
+->START simulation statistics
+
+->END simulation statistics
+EMTP terminated
+Date: 24/11/21
+Time: 11:43:31.788

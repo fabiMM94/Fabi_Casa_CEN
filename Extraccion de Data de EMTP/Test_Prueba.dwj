@@ -6,7 +6,7 @@
 parseScriptFile("emtp_cen.dwj");
 
 var pathData = //'C:\\Users\\benjamin.vega\\Documents\\GitHub\\GFM_SEN\\Extraccion de Data de EMTP'
-'C:\\Users\\fabian.medina\\OneDrive - Coordinador El\u00e9ctrico Nacional\\Escritorio\\CEN_Fabian\\Codigos\\Fabi_Casa_CEN\\Extraccion de Data de EMTP\\Data\\Data_2030_i0'
+'C:\\Users\\fabian.medina\\OneDrive - Coordinador El\u00e9ctrico Nacional\\Escritorio\\CEN_Fabian\\Codigos\\Fabi_Casa_CEN\\Extraccion de Data de EMTP\\Data\\Data_2028'
 //'C:\\Users\\fabian.medina\\OneDrive - Coordinador El\u00e9ctrico Nacional\\Escritorio\\CEN_Fabian\\Codigos\\DATA TEST GRID FORMING\\GFM_SEN\\Extraccion de Data de EMTP\\Data\\Data_2030_i0'
 //'C:\\Users\\fabian.medina\\OneDrive - Coordinador El\u00e9ctrico Nacional\\Escritorio\\CEN_Fabian\\Codigos\\DATA TEST GRID FORMING\\00. New Version Code\\Mati codigos\\Data_con_PMGD'
 //"C:\\Users\\fabian.medina\\OneDrive - Coordinador Eléctrico Nacional\\Escritorio\\CEN_Fabian\\Codigos\\DATA TEST GRID FORMING\Data";
